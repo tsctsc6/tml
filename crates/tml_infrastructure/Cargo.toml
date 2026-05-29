@@ -1,0 +1,12 @@
+[package]
+name = "tml_infrastructure"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+tml_domain = { workspace = true }
+tml_application = { workspace = true }
+
+sea-orm = { workspace = true }
+serde_json = { workspace = true }
+chrono = { workspace = true }

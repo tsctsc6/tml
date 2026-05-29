@@ -1,0 +1,6 @@
+[package]
+name = "tml_domain"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]

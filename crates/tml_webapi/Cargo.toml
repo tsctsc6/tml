@@ -1,0 +1,15 @@
+[package]
+name = "tml_webapi"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+tml_domain = { workspace = true }
+tml_application = { workspace = true }
+tml_infrastructure = { workspace = true }
+tml_migration = { workspace = true }
+
+sea-orm = { workspace = true }
+tokio = { workspace = true }
+serde = { workspace = true }
+config = { workspace = true }
