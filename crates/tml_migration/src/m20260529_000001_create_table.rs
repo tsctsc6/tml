@@ -210,7 +210,7 @@ impl MigrationTrait for Migration {
                 Index::create()
                     .table(("app", "music_info"))
                     .name("idx-music_info_album_id")
-                    .col("storage_id")
+                    .col("album_id")
                     .to_owned(),
             )
             .await?;
@@ -219,7 +219,7 @@ impl MigrationTrait for Migration {
                 Index::create()
                     .table(("app", "music_info"))
                     .name("idx-music_info_storage_id")
-                    .col("album_id")
+                    .col("storage_id")
                     .to_owned(),
             )
             .await?;
@@ -343,6 +343,7 @@ impl MigrationTrait for Migration {
                     .name("idx-music_list_id_order")
                     .col("music_list_id")
                     .col("order")
+                    .unique()
                     .to_owned(),
             )
             .await?;
