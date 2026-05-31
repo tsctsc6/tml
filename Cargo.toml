@@ -30,3 +30,4 @@ argon2 = { version = "0.5.3", features = ["password-hash"] }
 thiserror = "2.0.18"
 config = "0.15.23"
 chrono = "0.4.44"
+clap = "4.6.1"

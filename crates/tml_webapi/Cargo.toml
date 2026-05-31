@@ -13,3 +13,4 @@ sea-orm = { workspace = true }
 tokio = { workspace = true }
 serde = { workspace = true }
 config = { workspace = true }
+clap = { workspace = true }

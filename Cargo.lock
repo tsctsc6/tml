@@ -2917,6 +2917,7 @@ dependencies = [
 name = "tml_webapi"
 version = "0.1.0"
 dependencies = [
+ "clap",
  "config",
  "sea-orm",
  "serde",
