@@ -337,6 +337,16 @@ impl MigrationTrait for Migration {
             )
             .await?;
         manager
+            .create_index(
+                Index::create()
+                    .table(("app", "music_info_music_list"))
+                    .name("idx-music_list_id_order")
+                    .col("music_list_id")
+                    .col("order")
+                    .to_owned(),
+            )
+            .await?;
+        manager
             .create_table(
                 Table::create()
                     .table(("app", "album_performer"))
