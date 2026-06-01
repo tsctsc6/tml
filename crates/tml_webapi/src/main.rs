@@ -1,6 +1,7 @@
 pub mod app_state;
 pub mod command;
 pub mod config;
+pub mod manage;
 
 use std::{process::ExitCode, sync::Arc};
 
@@ -9,6 +10,14 @@ use sea_orm::Database;
 use tml_migration::MigratorTrait;
 
 use crate::{app_state::AppState, command::Cli};
+
+#[derive(Debug, thiserror::Error)]
+enum Error {
+    #[error("Webapi error")]
+    WebapiError,
+    #[error("{0}")]
+    ManageError(#[from] manage::Error),
+}
 
 #[tokio::main]
 async fn main() -> ExitCode {
@@ -38,25 +47,35 @@ async fn main() -> ExitCode {
 
     let app_state = AppState {
         app_config,
-        cli,
+        cli: cli.clone(),
         db,
     };
 
-    match &app_state.cli.command {
-        command::Commands::Start => start(),
-        command::Commands::Manage { command } => match command {
-            command::ManageCommands::Init { username } => init(username),
-            command::ManageCommands::ResetPassword { username } => reset_password(username),
-        },
+    let result = match &cli.clone().command {
+        command::Commands::Start => start(app_state),
+        command::Commands::Manage { command } => manage(command, app_state).await,
     };
+    match result {
+        Ok(_) => {}
+        Err(e) => {
+            eprintln!("{}", e.to_string());
+            return ExitCode::FAILURE;
+        }
+    }
 
     ExitCode::SUCCESS
 }
 
-fn start() -> ! {
-    loop {}
+fn start(app_state: AppState) -> Result<(), Error> {
+    Ok(())
 }
 
-fn init(username: &str) {}
-
-fn reset_password(username: &str) {}
+async fn manage(command: &command::ManageCommands, app_state: AppState) -> Result<(), Error> {
+    let _x = match command {
+        command::ManageCommands::InitAdmin { username } => manage::init(username, app_state).await,
+        command::ManageCommands::ResetPassword { username } => {
+            manage::reset_password(username, app_state).await
+        }
+    }?;
+    Ok(())
+}

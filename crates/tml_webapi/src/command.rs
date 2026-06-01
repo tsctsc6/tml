@@ -31,7 +31,7 @@ pub enum Commands {
 #[derive(Subcommand, Debug)]
 pub enum ManageCommands {
     /// Create a new admin account
-    Init {
+    InitAdmin {
         #[arg(short, long)]
         username: String,
     },
