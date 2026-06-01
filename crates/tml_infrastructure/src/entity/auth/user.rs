@@ -19,14 +19,14 @@ pub struct Model {
 
 impl ActiveModelBehavior for ActiveModel {}
 
-// impl From<Model> for domain::model::user::Model {
-//     fn from(model: Model) -> Self {
-//         domain::model::user::Model {
-//             id: model.id,
-//             username: model.username,
-//             password_hash: model.password_hash,
-//             enabled: model.enabled,
-//             created_at: model.created_at,
-//         }
-//     }
-// }
+impl From<Model> for tml_domain::model::auth::user::Model {
+    fn from(model: Model) -> Self {
+        tml_domain::model::auth::user::Model {
+            id: model.id,
+            username: model.username,
+            password_hash: model.password_hash,
+            enabled: model.enabled,
+            created_at: model.created_at,
+        }
+    }
+}

@@ -1,0 +1,56 @@
+use std::time::Duration;
+
+use crate::app_trait;
+
+pub mod repository {
+    use tml_domain::model::auth::user;
+
+    #[derive(Debug, thiserror::Error)]
+    pub enum Error {
+        #[error("User not found")]
+        UserNotFound,
+        #[error("Unknown error: {0}")]
+        Unknown(String),
+    }
+
+    #[async_trait::async_trait]
+    pub trait Trait {
+        async fn find_user_by_username(&self, username: &str) -> Result<user::Model, Error>;
+    }
+}
+
+pub struct Request {
+    pub username: String,
+    pub password: String,
+}
+
+pub struct Response {
+    pub token: Option<String>,
+}
+
+#[derive(Debug, thiserror::Error)]
+pub enum Error {
+    #[error("Jwt error: {0}")]
+    JwtError(#[from] app_trait::jwt_manager::Error),
+    #[error("Repository error: {0}")]
+    RepositoryError(#[from] repository::Error),
+    #[error("Password Hasher error: {0}")]
+    PasswordHasherError(#[from] app_trait::password_hasher::Error),
+}
+
+pub async fn handle(
+    request: Request,
+    password_hasher: &impl app_trait::password_hasher::Trait,
+    jwt_manager: &impl app_trait::jwt_manager::Trait,
+    repository: &impl repository::Trait,
+) -> Result<Response, Error> {
+    let user = repository.find_user_by_username(&request.username).await?;
+    password_hasher.verify_password(&request.password, &user.password_hash)?;
+    let claims = app_trait::jwt_manager::Claims {
+        sub: user.id.to_string(),
+        exp: 0, // exp will be set in create_token method
+        my_field: "abc".into(),
+    };
+    let token = jwt_manager.create_token(claims, Duration::from_secs(3600))?;
+    Ok(Response { token: Some(token) })
+}
