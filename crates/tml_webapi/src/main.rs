@@ -1,11 +1,13 @@
 pub mod app_state;
 pub mod command;
 pub mod config;
+pub mod endpoint;
 pub mod logger;
 pub mod manage;
 
 use std::{process::ExitCode, sync::Arc};
 
+use axum::routing::{get, post};
 use clap::Parser;
 use sea_orm::Database;
 use tml_migration::MigratorTrait;
@@ -55,13 +57,17 @@ async fn main() -> ExitCode {
     };
 
     let app_state = AppState {
-        app_config,
+        app_config: app_config.clone(),
         cli: cli.clone(),
+        password_hasher: Arc::new(tml_infrastructure::password_hasher::PasswordHasher),
+        jwt_manager: Arc::new(tml_infrastructure::jwt_manager::JwtManager::new(
+            app_config.jwt_secret_key.clone(),
+        )),
         db,
     };
 
     let result = match &cli.clone().command {
-        command::Commands::Start => start(app_state),
+        command::Commands::Start => start(app_state).await,
         command::Commands::Manage { command } => manage(command, app_state).await,
     };
     match result {
@@ -75,7 +81,16 @@ async fn main() -> ExitCode {
     ExitCode::SUCCESS
 }
 
-fn start(app_state: AppState) -> Result<(), Error> {
+async fn start(app_state: AppState) -> Result<(), Error> {
+    let app = axum::Router::new()
+        .route("/", get(|| async { "Hello, World!" }))
+        .route("/register", post(endpoint::register::handle))
+        .route("/login", post(endpoint::login::handle))
+        .with_state(app_state);
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:9000")
+        .await
+        .unwrap();
+    axum::serve(listener, app).await.unwrap();
     Ok(())
 }
 
