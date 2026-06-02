@@ -50,8 +50,12 @@ async fn main() -> ExitCode {
     };
 
     let user_id_security_stamp_cache = Cache::builder()
-        .max_capacity(100)
-        .time_to_live(Duration::from_mins(30))
+        .max_capacity(app_config.user_id_security_stamp_cache.max_capacity)
+        .time_to_live(Duration::from_secs(
+            app_config
+                .user_id_security_stamp_cache
+                .time_to_live_in_second,
+        ))
         .build();
 
     let app_state = AppState {
@@ -74,18 +78,19 @@ async fn main() -> ExitCode {
 }
 
 async fn start(app_state: AppState) -> ExitCode {
-    let app = axum::Router::new()
-        .route("/", get(|| async { "Hello, World!" }))
-        .route("/register", post(endpoint::register::handle))
-        .route("/login", post(endpoint::login::handle))
-        .with_state(app_state);
-    let listener = match tokio::net::TcpListener::bind("127.0.0.1:9000").await {
+    let listening_address = app_state.app_config.listening_address.as_str();
+    let listener = match tokio::net::TcpListener::bind(listening_address).await {
         Ok(l) => l,
         Err(e) => {
             tracing::error!("{}", e.to_string());
             return ExitCode::FAILURE;
         }
     };
+    let app = axum::Router::new()
+        .route("/", get(|| async { "Hello, World!" }))
+        .route("/register", post(endpoint::register::handle))
+        .route("/login", post(endpoint::login::handle))
+        .with_state(app_state);
     match axum::serve(listener, app).await {
         Ok(_) => {}
         Err(e) => {
