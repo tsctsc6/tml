@@ -5,10 +5,11 @@ pub mod endpoint;
 pub mod logger;
 pub mod manage;
 
-use std::{process::ExitCode, sync::Arc};
+use std::{process::ExitCode, sync::Arc, time::Duration};
 
 use axum::routing::{get, post};
 use clap::Parser;
+use moka::future::Cache;
 use sea_orm::Database;
 use tml_migration::MigratorTrait;
 
@@ -48,6 +49,11 @@ async fn main() -> ExitCode {
         }
     };
 
+    let user_id_security_stamp_cache = Cache::builder()
+        .max_capacity(100)
+        .time_to_live(Duration::from_mins(30))
+        .build();
+
     let app_state = AppState {
         app_config: Arc::clone(&app_config),
         cli: Arc::clone(&cli),
@@ -56,6 +62,7 @@ async fn main() -> ExitCode {
             app_config.jwt_secret_key.clone(),
         )),
         db,
+        user_id_security_stamp_cache,
     };
 
     let result = match &Arc::clone(&cli).command {

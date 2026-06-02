@@ -16,3 +16,4 @@ serde = { workspace = true }
 jsonwebtoken = { workspace = true }
 async-trait = { workspace = true }
 uuid = { workspace = true }
+moka = { workspace = true }
