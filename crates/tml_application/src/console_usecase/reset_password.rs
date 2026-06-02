@@ -3,6 +3,8 @@ use crate::app_trait;
 pub mod repository {
     #[derive(Debug, thiserror::Error)]
     pub enum Error {
+        #[error("User not found")]
+        UserNotFound,
         #[error("Unknown error: {0}")]
         Unknown(String),
     }

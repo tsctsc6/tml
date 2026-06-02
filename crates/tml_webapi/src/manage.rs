@@ -1,4 +1,8 @@
+use std::sync::Arc;
+
 use crate::app_state::AppState;
+use tml_application::console_usecase::init_admin;
+use tml_application::console_usecase::reset_password;
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
@@ -11,17 +15,35 @@ pub enum Error {
 }
 
 pub async fn init(username: &str, app_state: AppState) -> Result<(), Error> {
-    let secret_password = inquire::Password::new("Password:")
+    let new_password = inquire::Password::new("Password:")
         .with_display_mode(inquire::PasswordDisplayMode::Masked)
         .prompt()
         .unwrap();
+    init_admin::handle(
+        init_admin::Request {
+            username: username.to_string(),
+            password: new_password,
+        },
+        &*app_state.password_hasher,
+        &tml_infrastructure::console_usecase::init_admin::Repository::new(app_state.db),
+    )
+    .await?;
     Ok(())
 }
 
 pub async fn reset_password(username: &str, app_state: AppState) -> Result<(), Error> {
-    let secret_password = inquire::Password::new("Password:")
+    let new_password = inquire::Password::new("Password:")
         .with_display_mode(inquire::PasswordDisplayMode::Masked)
         .prompt()
         .unwrap();
+    reset_password::handle(
+        reset_password::Request {
+            username: username.to_string(),
+            password: new_password,
+        },
+        &*app_state.password_hasher,
+        &tml_infrastructure::console_usecase::reset_password::Repository::new(app_state.db),
+    )
+    .await?;
     Ok(())
 }
