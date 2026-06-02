@@ -19,8 +19,8 @@ pub async fn init(username: &str, app_state: AppState) -> Result<(), Error> {
         .unwrap();
     init_admin::handle(
         init_admin::Request {
-            username: username.to_string(),
-            password: new_password,
+            username: username,
+            password: &new_password,
         },
         &*app_state.password_hasher,
         &tml_infrastructure::console_usecase::init_admin::Repository::new(app_state.db),
@@ -36,8 +36,8 @@ pub async fn reset_password(username: &str, app_state: AppState) -> Result<(), E
         .unwrap();
     reset_password::handle(
         reset_password::Request {
-            username: username.to_string(),
-            password: new_password,
+            username: username,
+            password: &new_password,
         },
         &*app_state.password_hasher,
         &tml_infrastructure::console_usecase::reset_password::Repository::new(

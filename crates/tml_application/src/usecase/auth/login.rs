@@ -19,9 +19,9 @@ pub mod repository {
     }
 }
 
-pub struct Request {
-    pub username: String,
-    pub password: String,
+pub struct Request<'a> {
+    pub username: &'a str,
+    pub password: &'a str,
 }
 
 pub struct Response {
@@ -39,13 +39,13 @@ pub enum Error {
 }
 
 pub async fn handle(
-    request: Request,
+    request: Request<'_>,
     password_hasher: &impl app_trait::password_hasher::Trait,
     jwt_manager: &impl app_trait::jwt_manager::Trait,
     repository: &impl repository::Trait,
 ) -> Result<Response, Error> {
-    let user = repository.find_user_by_username(&request.username).await?;
-    password_hasher.verify_password(&request.password, &user.password_hash)?;
+    let user = repository.find_user_by_username(request.username).await?;
+    password_hasher.verify_password(request.password, &user.password_hash)?;
     let claims = app_trait::jwt_manager::Claims {
         sub: user.id.to_string(),
         exp: 0, // exp will be set in create_token method

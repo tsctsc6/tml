@@ -35,8 +35,8 @@ pub async fn handle(
 ) -> (StatusCode, Json<ResponseBody>) {
     match login::handle(
         login::Request {
-            username: request_body.username,
-            password: request_body.password,
+            username: &request_body.username,
+            password: &request_body.password,
         },
         &*state.password_hasher,
         &*state.jwt_manager,

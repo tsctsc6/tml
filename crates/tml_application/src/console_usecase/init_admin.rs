@@ -20,9 +20,9 @@ pub mod repository {
     }
 }
 
-pub struct Request {
-    pub username: String,
-    pub password: String,
+pub struct Request<'a> {
+    pub username: &'a str,
+    pub password: &'a str,
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -36,16 +36,16 @@ pub enum Error {
 }
 
 pub async fn handle(
-    request: Request,
+    request: Request<'_>,
     password_hasher: &impl app_trait::password_hasher::Trait,
     repository: &impl repository::Trait,
 ) -> Result<(), Error> {
     if !repository.is_no_admin().await? {
         return Err(Error::HadAdminError);
     }
-    let hashed_password = password_hasher.hash_password(&request.password)?;
+    let hashed_password = password_hasher.hash_password(request.password)?;
     let _new_admin = repository
-        .create_admin(&request.username, &hashed_password)
+        .create_admin(request.username, &hashed_password)
         .await?;
     Ok(())
 }

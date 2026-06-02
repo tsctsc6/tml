@@ -34,8 +34,8 @@ pub async fn handle(
 ) -> (StatusCode, Json<ResponseBody>) {
     match register::handle(
         register::Request {
-            username: request_body.username,
-            password: request_body.password,
+            username: &request_body.username,
+            password: &request_body.password,
         },
         &*state.password_hasher,
         &tml_infrastructure::usecase::auth::register::Repository::new(state.db),
