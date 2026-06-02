@@ -1,14 +1,16 @@
 use crate::entity::auth::user;
+use moka::future::Cache;
 use sea_orm::{ActiveModelTrait, ActiveValue::Set};
 use tml_application::console_usecase::reset_password;
 
 pub struct Repository {
     db: sea_orm::DatabaseConnection,
+    cache: Cache<i64, uuid::Uuid>,
 }
 
 impl Repository {
-    pub fn new(db: sea_orm::DatabaseConnection) -> Self {
-        Repository { db }
+    pub fn new(db: sea_orm::DatabaseConnection, cache: Cache<i64, uuid::Uuid>) -> Self {
+        Repository { db, cache }
     }
 }
 
@@ -29,12 +31,13 @@ impl reset_password::repository::Trait for Repository {
         let mut user: user::ActiveModel = user.into();
         user.password_hash = Set(password_hash.to_string());
         user.security_stamp = Set(uuid::Uuid::new_v4());
-        let _user =
+        let user =
             user.update(&self.db)
                 .await
                 .map_err(|e| -> reset_password::repository::Error {
                     reset_password::repository::Error::Unknown(e.to_string())
                 })?;
+        self.cache.remove(&user.id).await;
         Ok(())
     }
 }

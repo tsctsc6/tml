@@ -1,13 +1,15 @@
 use crate::entity::auth::user;
+use moka::future::Cache;
 use tml_application::usecase::auth::login;
 
 pub struct Repository {
     db: sea_orm::DatabaseConnection,
+    cache: Cache<i64, uuid::Uuid>,
 }
 
 impl Repository {
-    pub fn new(db: sea_orm::DatabaseConnection) -> Self {
-        Repository { db }
+    pub fn new(db: sea_orm::DatabaseConnection, cache: Cache<i64, uuid::Uuid>) -> Self {
+        Repository { db, cache }
     }
 }
 
@@ -24,6 +26,7 @@ impl login::repository::Trait for Repository {
                 login::repository::Error::Unknown(e.to_string())
             })?
             .ok_or(login::repository::Error::UserNotFound)?;
+        self.cache.insert(user.id, user.security_stamp).await;
         Ok(user.into())
     }
 }

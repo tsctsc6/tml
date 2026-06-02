@@ -13,5 +13,6 @@ pub struct AppState {
     pub password_hasher: Arc<tml_infrastructure::password_hasher::PasswordHasher>,
     pub jwt_manager: Arc<tml_infrastructure::jwt_manager::JwtManager>,
     pub db: DatabaseConnection,
+    /// Cache-Aside Pattern
     pub user_id_security_stamp_cache: Cache<i64, uuid::Uuid>,
 }

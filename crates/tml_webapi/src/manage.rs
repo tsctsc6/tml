@@ -40,7 +40,10 @@ pub async fn reset_password(username: &str, app_state: AppState) -> Result<(), E
             password: new_password,
         },
         &*app_state.password_hasher,
-        &tml_infrastructure::console_usecase::reset_password::Repository::new(app_state.db),
+        &tml_infrastructure::console_usecase::reset_password::Repository::new(
+            app_state.db,
+            app_state.user_id_security_stamp_cache,
+        ),
     )
     .await?;
     Ok(())
