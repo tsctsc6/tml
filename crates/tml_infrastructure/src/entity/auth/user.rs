@@ -11,7 +11,7 @@ pub struct Model {
     pub password_hash: String,
     pub enabled: bool,
     pub created_at: chrono::DateTime<chrono::Utc>,
-    pub secure_stamp: uuid::Uuid,
+    pub security_stamp: uuid::Uuid,
     #[sea_orm(has_many, via = "user_role")]
     pub roles: HasMany<super::role::Entity>,
     #[sea_orm(has_many)]
@@ -28,6 +28,7 @@ impl From<Model> for tml_domain::model::auth::user::Model {
             password_hash: model.password_hash,
             enabled: model.enabled,
             created_at: model.created_at,
+            security_stamp: model.security_stamp,
         }
     }
 }

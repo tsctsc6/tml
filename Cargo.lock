@@ -3528,6 +3528,7 @@ dependencies = [
  "serde",
  "thiserror",
  "tml_domain",
+ "uuid",
 ]
 
 [[package]]
@@ -3535,6 +3536,7 @@ name = "tml_domain"
 version = "0.1.0"
 dependencies = [
  "chrono",
+ "uuid",
 ]
 
 [[package]]

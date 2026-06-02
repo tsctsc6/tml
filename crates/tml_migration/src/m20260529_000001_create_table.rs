@@ -33,6 +33,7 @@ impl MigrationTrait for Migration {
                     .col(string("password_hash"))
                     .col(boolean("enabled"))
                     .col(timestamp_with_time_zone("created_at"))
+                    .col(uuid("security_stamp"))
                     .to_owned(),
             )
             .await?;

@@ -12,7 +12,7 @@ pub enum Error {
 pub struct Claims {
     pub sub: String,
     pub exp: u128,
-    pub my_field: String,
+    pub security_stamp: uuid::Uuid,
 }
 
 pub trait Trait: Send + Sync + 'static {

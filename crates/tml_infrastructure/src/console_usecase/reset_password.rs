@@ -28,7 +28,7 @@ impl reset_password::repository::Trait for Repository {
             .ok_or(reset_password::repository::Error::UserNotFound)?;
         let mut user: user::ActiveModel = user.into();
         user.password_hash = Set(password_hash.to_string());
-        user.secure_stamp = Set(uuid::Uuid::new_v4());
+        user.security_stamp = Set(uuid::Uuid::new_v4());
         let _user =
             user.update(&self.db)
                 .await

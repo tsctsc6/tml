@@ -49,7 +49,7 @@ pub async fn handle(
     let claims = app_trait::jwt_manager::Claims {
         sub: user.id.to_string(),
         exp: 0, // exp will be set in create_token method
-        my_field: "abc".into(),
+        security_stamp: user.security_stamp,
     };
     let token = jwt_manager.create_token(claims, Duration::from_secs(3600))?;
     Ok(Response { token: Some(token) })
