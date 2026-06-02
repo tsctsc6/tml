@@ -24,6 +24,8 @@ impl register::repository::Trait for Repository {
         let user_to_create = user::ActiveModel {
             username: Set(username.into()),
             password_hash: Set(password_hash.into()),
+            enabled: Set(true),
+            created_at: Set(chrono::Utc::now()),
             ..Default::default()
         };
         let new_user = match user_to_create.insert(&self.db).await {

@@ -51,8 +51,8 @@ impl MigrationTrait for Migration {
                 Table::create()
                     .table(("auth", "user_role"))
                     .if_not_exists()
-                    .col(integer("user_id"))
-                    .col(integer("role_id"))
+                    .col(big_integer("user_id"))
+                    .col(big_integer("role_id"))
                     .primary_key(
                         Index::create()
                             .name("pk-user_role")
