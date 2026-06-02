@@ -37,7 +37,7 @@ impl reset_password::repository::Trait for Repository {
                 .map_err(|e| -> reset_password::repository::Error {
                     reset_password::repository::Error::Unknown(e.to_string())
                 })?;
-        self.cache.remove(&user.id).await;
+        self.cache.invalidate(&user.id).await;
         Ok(())
     }
 }
