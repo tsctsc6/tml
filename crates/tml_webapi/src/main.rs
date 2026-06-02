@@ -57,8 +57,8 @@ async fn main() -> ExitCode {
     };
 
     let app_state = AppState {
-        app_config: app_config.clone(),
-        cli: cli.clone(),
+        app_config: Arc::clone(&app_config),
+        cli: Arc::clone(&cli),
         password_hasher: Arc::new(tml_infrastructure::password_hasher::PasswordHasher),
         jwt_manager: Arc::new(tml_infrastructure::jwt_manager::JwtManager::new(
             app_config.jwt_secret_key.clone(),
@@ -66,7 +66,7 @@ async fn main() -> ExitCode {
         db,
     };
 
-    let result = match &cli.clone().command {
+    let result = match &Arc::clone(&cli).command {
         command::Commands::Start => start(app_state).await,
         command::Commands::Manage { command } => manage(command, app_state).await,
     };
