@@ -384,6 +384,22 @@ impl MigrationTrait for Migration {
             )
             .await?;
 
+        let stmt = Query::insert()
+            .into_table(("auth", "role"))
+            .columns(["name"])
+            .values_panic(["admin".into()])
+            .to_owned();
+
+        manager.execute(stmt).await?;
+
+        let stmt = Query::insert()
+            .into_table(("auth", "role"))
+            .columns(["name"])
+            .values_panic(["normal-user".into()])
+            .to_owned();
+
+        manager.execute(stmt).await?;
+
         Ok(())
     }
 
