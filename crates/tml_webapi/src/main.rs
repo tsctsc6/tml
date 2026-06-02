@@ -14,14 +14,6 @@ use tml_migration::MigratorTrait;
 
 use crate::{app_state::AppState, command::Cli};
 
-#[derive(Debug, thiserror::Error)]
-enum Error {
-    #[error("Webapi error")]
-    WebapiError,
-    #[error("{0}")]
-    ManageError(#[from] manage::Error),
-}
-
 #[tokio::main]
 async fn main() -> ExitCode {
     let cli = Arc::new(Cli::parse());
@@ -70,36 +62,45 @@ async fn main() -> ExitCode {
         command::Commands::Start => start(app_state).await,
         command::Commands::Manage { command } => manage(command, app_state).await,
     };
-    match result {
-        Ok(_) => {}
-        Err(e) => {
-            tracing::error!("{}", e.to_string());
-            return ExitCode::FAILURE;
-        }
-    }
 
-    ExitCode::SUCCESS
+    return result;
 }
 
-async fn start(app_state: AppState) -> Result<(), Error> {
+async fn start(app_state: AppState) -> ExitCode {
     let app = axum::Router::new()
         .route("/", get(|| async { "Hello, World!" }))
         .route("/register", post(endpoint::register::handle))
         .route("/login", post(endpoint::login::handle))
         .with_state(app_state);
-    let listener = tokio::net::TcpListener::bind("127.0.0.1:9000")
-        .await
-        .unwrap();
-    axum::serve(listener, app).await.unwrap();
-    Ok(())
+    let listener = match tokio::net::TcpListener::bind("127.0.0.1:9000").await {
+        Ok(l) => l,
+        Err(e) => {
+            tracing::error!("{}", e.to_string());
+            return ExitCode::FAILURE;
+        }
+    };
+    match axum::serve(listener, app).await {
+        Ok(_) => {}
+        Err(e) => {
+            tracing::error!("{}", e.to_string());
+            return ExitCode::FAILURE;
+        }
+    };
+    ExitCode::SUCCESS
 }
 
-async fn manage(command: &command::ManageCommands, app_state: AppState) -> Result<(), Error> {
-    let _x = match command {
+async fn manage(command: &command::ManageCommands, app_state: AppState) -> ExitCode {
+    let result = match command {
         command::ManageCommands::InitAdmin { username } => manage::init(username, app_state).await,
         command::ManageCommands::ResetPassword { username } => {
             manage::reset_password(username, app_state).await
         }
-    }?;
-    Ok(())
+    };
+    match result {
+        Ok(_) => {}
+        Err(e) => {
+            tracing::error!("{}", e.to_string());
+        }
+    }
+    ExitCode::SUCCESS
 }
