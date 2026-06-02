@@ -1,6 +1,7 @@
 pub mod app_state;
 pub mod command;
 pub mod config;
+pub mod logger;
 pub mod manage;
 
 use std::{process::ExitCode, sync::Arc};
@@ -21,10 +22,19 @@ enum Error {
 
 #[tokio::main]
 async fn main() -> ExitCode {
+    let cli = Arc::new(Cli::parse());
+    match logger::init_logger(cli.verbose) {
+        Ok(_) => {}
+        Err(e) => {
+            eprintln!("{}", e.to_string());
+            return ExitCode::FAILURE;
+        }
+    };
+
     let app_config = match config::init_config() {
         Ok(c) => c,
         Err(e) => {
-            eprintln!("{}", e.to_string());
+            tracing::error!("{}", e.to_string());
             return ExitCode::FAILURE;
         }
     };
@@ -32,18 +42,17 @@ async fn main() -> ExitCode {
     let db = match Database::connect(&app_config.connect_string).await {
         Ok(d) => d,
         Err(e) => {
-            eprintln!("{}", e.to_string());
+            tracing::error!("{}", e.to_string());
             return ExitCode::FAILURE;
         }
     };
     match tml_migration::Migrator::up(&db, None).await {
         Ok(_) => {}
         Err(e) => {
-            eprintln!("{}", e.to_string());
+            tracing::error!("{}", e.to_string());
             return ExitCode::FAILURE;
         }
     };
-    let cli = Arc::new(Cli::parse());
 
     let app_state = AppState {
         app_config,
@@ -58,7 +67,7 @@ async fn main() -> ExitCode {
     match result {
         Ok(_) => {}
         Err(e) => {
-            eprintln!("{}", e.to_string());
+            tracing::error!("{}", e.to_string());
             return ExitCode::FAILURE;
         }
     }

@@ -16,3 +16,7 @@ config = { workspace = true }
 clap = { workspace = true }
 inquire = { workspace = true }
 thiserror = { workspace = true }
+time = { version = "0.3.47", features = ["formatting", "macros"] }
+tracing = "0.1.44"
+tracing-appender = "0.2.5"
+tracing-subscriber = { version = "0.3.23", features = ["env-filter", "fmt", "time"] }
