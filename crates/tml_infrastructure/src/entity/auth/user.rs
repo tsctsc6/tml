@@ -11,6 +11,7 @@ pub struct Model {
     pub password_hash: String,
     pub enabled: bool,
     pub created_at: chrono::DateTime<chrono::Utc>,
+    pub secure_stamp: uuid::Uuid,
     #[sea_orm(has_many, via = "user_role")]
     pub roles: HasMany<super::role::Entity>,
     #[sea_orm(has_many)]

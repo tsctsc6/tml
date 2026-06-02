@@ -40,3 +40,4 @@ tracing-subscriber = { version = "0.3.23", features = [
     "fmt",
     "time",
 ] }
+uuid = { version = "1.23.2", features = ["v4"] }

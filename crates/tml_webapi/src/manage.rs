@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use crate::app_state::AppState;
 use tml_application::console_usecase::init_admin;
 use tml_application::console_usecase::reset_password;

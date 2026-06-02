@@ -1,10 +1,4 @@
-use crate::entity::auth::role;
 use crate::entity::auth::user;
-use crate::entity::auth::user_role;
-use sea_orm::ColumnTrait;
-use sea_orm::EntityTrait;
-use sea_orm::PaginatorTrait;
-use sea_orm::QueryFilter;
 use sea_orm::{ActiveModelTrait, ActiveValue::Set};
 use tml_application::console_usecase::reset_password;
 
@@ -34,6 +28,7 @@ impl reset_password::repository::Trait for Repository {
             .ok_or(reset_password::repository::Error::UserNotFound)?;
         let mut user: user::ActiveModel = user.into();
         user.password_hash = Set(password_hash.to_string());
+        user.secure_stamp = Set(uuid::Uuid::new_v4());
         let _user =
             user.update(&self.db)
                 .await
