@@ -32,8 +32,8 @@ impl register::repository::Trait for Repository {
         let new_user = match user_to_create.insert(&self.db).await {
             Ok(user) => user,
             Err(e) => match e.sql_err() {
-                Some(SqlErr::UniqueConstraintViolation(detail)) => {
-                    return Err(register::repository::Error::UniqueIndex(detail));
+                Some(SqlErr::UniqueConstraintViolation(_)) => {
+                    return Err(register::repository::Error::UsernameDuplication);
                 }
                 _ => {
                     return Err(register::repository::Error::Unknown(e.to_string()));

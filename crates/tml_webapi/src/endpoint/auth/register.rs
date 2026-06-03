@@ -54,7 +54,7 @@ pub async fn handle(
         Err(e) => {
             tracing::error!("Error occurred: {}", e);
             if let register::Error::RepositoryError(error) = e {
-                if let register::repository::Error::UniqueIndex(_) = error {
+                if let register::repository::Error::UsernameDuplication = error {
                     return (
                         StatusCode::OK,
                         Json(ResponseBody {

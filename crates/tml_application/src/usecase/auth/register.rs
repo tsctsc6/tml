@@ -5,8 +5,8 @@ pub mod repository {
 
     #[derive(Debug, thiserror::Error)]
     pub enum Error {
-        #[error("Unique index conflict: {0}")]
-        UniqueIndex(String),
+        #[error("Username duplication")]
+        UsernameDuplication,
         #[error("Unknown error: {0}")]
         Unknown(String),
     }

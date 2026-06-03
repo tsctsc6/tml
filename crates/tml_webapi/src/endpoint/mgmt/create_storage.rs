@@ -81,7 +81,7 @@ pub async fn handle(
                             StatusCode::OK,
                             Json(ResponseBody {
                                 success: false,
-                                message: Some("The name is duplicated".into()),
+                                message: Some("The name is already exists".into()),
                                 id: None,
                             }),
                         );
