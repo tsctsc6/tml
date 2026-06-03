@@ -92,6 +92,10 @@ async fn start(app_state: AppState) -> ExitCode {
         .route("/", get(|| async { "Hello, World!" }))
         .route("/register", post(endpoint::auth::register::handle))
         .route("/login", post(endpoint::auth::login::handle))
+        .route(
+            "/create_storage",
+            post(endpoint::mgmt::create_storage::handle),
+        )
         .with_state(app_state);
     match axum::serve(listener, app).await {
         Ok(_) => {}

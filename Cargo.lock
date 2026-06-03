@@ -3628,6 +3628,7 @@ dependencies = [
  "thiserror",
  "tml_application",
  "tml_domain",
+ "tracing",
  "uuid",
 ]
 
