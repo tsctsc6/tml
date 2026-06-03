@@ -19,7 +19,7 @@ pub async fn init(username: &str, app_state: AppState) -> Result<(), Error> {
         .unwrap();
     init_admin::handle(
         init_admin::Request {
-            username: username,
+            username,
             password: &new_password,
         },
         &*app_state.password_hasher,
@@ -36,7 +36,7 @@ pub async fn reset_password(username: &str, app_state: AppState) -> Result<(), E
         .unwrap();
     reset_password::handle(
         reset_password::Request {
-            username: username,
+            username,
             password: &new_password,
         },
         &*app_state.password_hasher,

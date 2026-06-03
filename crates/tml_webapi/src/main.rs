@@ -22,7 +22,7 @@ async fn main() -> ExitCode {
     let app_config = match config::init_config() {
         Ok(c) => c,
         Err(e) => {
-            eprintln!("{}", e.to_string());
+            eprintln!("{}", e);
             return ExitCode::FAILURE;
         }
     };
@@ -31,7 +31,7 @@ async fn main() -> ExitCode {
     match logger::init_logger(&app_config.log_level) {
         Ok(_) => {}
         Err(e) => {
-            eprintln!("{}", e.to_string());
+            eprintln!("{}", e);
             return ExitCode::FAILURE;
         }
     };

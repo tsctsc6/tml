@@ -53,22 +53,16 @@ pub async fn handle(
         ),
         Err(e) => {
             tracing::error!("Error occurred: {}", e);
-            match e {
-                register::Error::RepositoryError(error) => match error {
-                    register::repository::Error::UniqueIndex(_) => {
-                        return (
-                            StatusCode::OK,
-                            Json(ResponseBody {
-                                success: false,
-                                message: Some("User already exists".into()),
-                                id: None,
-                            }),
-                        );
-                    }
-                    _ => {}
-                },
-                _ => {}
-            }
+            if let register::Error::RepositoryError(error) = e { if let register::repository::Error::UniqueIndex(_) = error {
+                return (
+                    StatusCode::OK,
+                    Json(ResponseBody {
+                        success: false,
+                        message: Some("User already exists".into()),
+                        id: None,
+                    }),
+                );
+            } }
             (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json(ResponseBody::default()),
