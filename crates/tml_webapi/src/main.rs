@@ -8,7 +8,7 @@ pub mod manage;
 
 use std::{process::ExitCode, sync::Arc, time::Duration};
 
-use axum::routing::{get, post};
+use axum::routing::{post};
 use clap::Parser;
 use moka::future::Cache;
 use sea_orm::Database;
@@ -92,10 +92,12 @@ async fn start(app_state: AppState) -> ExitCode {
     let user_routes = axum::Router::new()
         .route("/register", post(endpoint::auth::register::handle))
         .route("/login", post(endpoint::auth::login::handle));
-    let mgmt_routes = axum::Router::new().route(
-        "/create_storage",
-        post(endpoint::mgmt::create_storage::handle),
-    );
+    let mgmt_routes = axum::Router::new()
+        .route("/create_storage", post(endpoint::mgmt::create_storage::handle))
+        .route(
+            "/update_storage",
+            post(endpoint::mgmt::update_storage::handle),
+        );
     let app = axum::Router::new()
         .nest("/api/mgmt", mgmt_routes)
         .nest("/api/user", user_routes)
