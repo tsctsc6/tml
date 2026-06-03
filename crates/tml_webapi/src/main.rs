@@ -18,7 +18,17 @@ use crate::{app_state::AppState, command::Cli};
 #[tokio::main]
 async fn main() -> ExitCode {
     let cli = Arc::new(Cli::parse());
-    match logger::init_logger(cli.verbose) {
+
+    let app_config = match config::init_config() {
+        Ok(c) => c,
+        Err(e) => {
+            eprintln!("{}", e.to_string());
+            return ExitCode::FAILURE;
+        }
+    };
+    let app_config = Arc::new(app_config);
+
+    match logger::init_logger(&app_config.log_level) {
         Ok(_) => {}
         Err(e) => {
             eprintln!("{}", e.to_string());
@@ -26,14 +36,6 @@ async fn main() -> ExitCode {
         }
     };
 
-    let app_config = match config::init_config() {
-        Ok(c) => c,
-        Err(e) => {
-            tracing::error!("{}", e.to_string());
-            return ExitCode::FAILURE;
-        }
-    };
-    let app_config = Arc::new(app_config);
     let db = match Database::connect(&app_config.connect_string).await {
         Ok(d) => d,
         Err(e) => {

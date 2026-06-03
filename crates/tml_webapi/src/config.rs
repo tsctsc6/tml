@@ -6,6 +6,7 @@ pub struct AppConfig {
     pub connect_string: String,
     pub jwt_secret_key: String,
     pub listening_address: String,
+    pub log_level: String,
     pub user_id_security_stamp_cache: UserIdSecurityStampCache,
 }
 

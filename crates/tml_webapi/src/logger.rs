@@ -23,7 +23,7 @@ pub enum Error {
 }
 
 /// Initializes the logger with both console and file outputs, using a rolling file appender.
-pub fn init_logger(verbose: u8) -> Result<(), Error> {
+pub fn init_logger(log_level: &str) -> Result<(), Error> {
     let file_appender = RollingFileAppender::builder()
         .rotation(Rotation::DAILY)
         .filename_suffix("log")
@@ -35,18 +35,14 @@ pub fn init_logger(verbose: u8) -> Result<(), Error> {
     let console_layer = fmt::layer()
         .with_writer(std::io::stderr)
         .with_ansi(true)
-        .event_format(MyCustomFormatter {
-            with_ansi: true,
-        });
+        .event_format(MyCustomFormatter { with_ansi: true });
 
     let file_layer = fmt::layer()
         .with_writer(non_blocking_appender)
         .with_ansi(false)
-        .event_format(MyCustomFormatter {
-            with_ansi: false,
-        });
+        .event_format(MyCustomFormatter { with_ansi: false });
 
-    let env_filter = EnvFilter::new(get_log_level(verbose));
+    let env_filter = EnvFilter::new(get_log_level(log_level));
 
     tracing_subscriber::registry()
         .with(env_filter)
@@ -60,14 +56,10 @@ pub fn init_logger(verbose: u8) -> Result<(), Error> {
     Ok(())
 }
 
-fn get_log_level(verbose: u8) -> &'static str {
-    match verbose {
-        0 => "off",
-        1 => "error",
-        2 => "warn",
-        3 => "info",
-        4 => "debug",
-        _ => "trace",
+fn get_log_level(log_level: &str) -> &str {
+    match log_level {
+        "error" | "warn" | "info" | "debug" | "trace" => log_level,
+        _ => "warn",
     }
 }
 
