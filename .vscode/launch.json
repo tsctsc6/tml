@@ -5,7 +5,7 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Run executable 'tml_webapi' webapi",
+            "name": "Debug executable 'tml_webapi' webapi",
             "type": "lldb",
             "request": "launch",
             "cargo": {
