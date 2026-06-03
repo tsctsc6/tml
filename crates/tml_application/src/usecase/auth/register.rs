@@ -28,8 +28,6 @@ pub struct Request<'a> {
 }
 
 pub struct Response {
-    pub success: bool,
-    pub message: Option<String>,
     pub id: i64,
 }
 
@@ -50,9 +48,5 @@ pub async fn handle(
     let new_user = repository
         .create_user(request.username, &hashed_password)
         .await?;
-    Ok(Response {
-        success: true,
-        id: new_user.id,
-        message: None,
-    })
+    Ok(Response { id: new_user.id })
 }
