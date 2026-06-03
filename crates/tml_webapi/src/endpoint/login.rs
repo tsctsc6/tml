@@ -33,6 +33,7 @@ pub async fn handle(
     State(state): State<AppState>,
     Json(request_body): Json<RequestBody>,
 ) -> (StatusCode, Json<ResponseBody>) {
+    tracing::info!("Received request: {}", request_body.username);
     match login::handle(
         login::Request {
             username: &request_body.username,
@@ -56,7 +57,7 @@ pub async fn handle(
             }),
         ),
         Err(e) => {
-            eprintln!("Error occurred: {}", e);
+            tracing::error!("Error occurred: {}", e);
             match e {
                 login::Error::RepositoryError(error) => match error {
                     login::repository::Error::UserNotFound => {

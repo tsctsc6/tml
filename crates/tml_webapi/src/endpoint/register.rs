@@ -32,6 +32,7 @@ pub async fn handle(
     State(state): State<AppState>,
     Json(request_body): Json<RequestBody>,
 ) -> (StatusCode, Json<ResponseBody>) {
+    tracing::info!("Received request: {}", request_body.username);
     match register::handle(
         register::Request {
             username: &request_body.username,
@@ -51,7 +52,7 @@ pub async fn handle(
             }),
         ),
         Err(e) => {
-            eprintln!("Error occurred: {}", e);
+            tracing::error!("Error occurred: {}", e);
             match e {
                 register::Error::RepositoryError(error) => match error {
                     register::repository::Error::UniqueIndex(_) => {
