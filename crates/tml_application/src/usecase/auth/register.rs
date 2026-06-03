@@ -1,7 +1,6 @@
 use crate::app_trait;
 
 pub mod repository {
-    use async_trait::async_trait;
     use tml_domain::model::auth::user;
 
     #[derive(Debug, thiserror::Error)]
@@ -12,7 +11,7 @@ pub mod repository {
         Unknown(String),
     }
 
-    #[async_trait]
+    #[async_trait::async_trait]
     pub trait Trait {
         async fn create_user(
             &self,

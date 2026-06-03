@@ -6,15 +6,15 @@ use crate::AppState;
 
 #[derive(Deserialize)]
 pub struct RequestBody {
-    username: String,
-    password: String,
+    pub username: String,
+    pub password: String,
 }
 
 #[derive(Serialize)]
 pub struct ResponseBody {
-    success: bool,
-    message: Option<String>,
-    id: Option<i64>,
+    pub success: bool,
+    pub message: Option<String>,
+    pub id: Option<i64>,
 }
 
 impl ResponseBody {

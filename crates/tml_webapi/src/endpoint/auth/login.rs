@@ -7,15 +7,15 @@ use crate::AppState;
 
 #[derive(Deserialize)]
 pub struct RequestBody {
-    username: String,
-    password: String,
+    pub username: String,
+    pub password: String,
 }
 
 #[derive(Serialize)]
 pub struct ResponseBody {
-    success: bool,
-    message: Option<String>,
-    token: Option<String>,
+    pub success: bool,
+    pub message: Option<String>,
+    pub token: Option<String>,
 }
 
 impl ResponseBody {
@@ -59,26 +59,30 @@ pub async fn handle(
         Err(e) => {
             tracing::error!("Error occurred: {}", e);
             match e {
-                login::Error::RepositoryError(error) => if let login::repository::Error::UserNotFound = error {
-                    return (
-                        StatusCode::OK,
-                        Json(ResponseBody {
-                            success: false,
-                            message: Some("User not found".into()),
-                            token: None,
-                        }),
-                    );
-                },
-                login::Error::PasswordHasherError(error) => if let app_trait::password_hasher::Error::InvalidPassword = error {
-                    return (
-                        StatusCode::OK,
-                        Json(ResponseBody {
-                            success: false,
-                            message: Some("Invalid password".into()),
-                            token: None,
-                        }),
-                    );
-                },
+                login::Error::RepositoryError(error) => {
+                    if let login::repository::Error::UserNotFound = error {
+                        return (
+                            StatusCode::OK,
+                            Json(ResponseBody {
+                                success: false,
+                                message: Some("User not found".into()),
+                                token: None,
+                            }),
+                        );
+                    }
+                }
+                login::Error::PasswordHasherError(error) => {
+                    if let app_trait::password_hasher::Error::InvalidPassword = error {
+                        return (
+                            StatusCode::OK,
+                            Json(ResponseBody {
+                                success: false,
+                                message: Some("Invalid password".into()),
+                                token: None,
+                            }),
+                        );
+                    }
+                }
                 _ => (),
             }
             (
