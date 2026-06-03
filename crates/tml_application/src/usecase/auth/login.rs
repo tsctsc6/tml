@@ -15,7 +15,10 @@ pub mod repository {
 
     #[async_trait::async_trait]
     pub trait Trait {
-        async fn find_user_by_username(&self, username: &str) -> Result<user::Model, Error>;
+        async fn find_user_by_username(
+            &self,
+            username: &str,
+        ) -> Result<(user::Model, Vec<String>), Error>;
     }
 }
 
@@ -44,11 +47,12 @@ pub async fn handle(
     jwt_manager: &impl app_trait::jwt_manager::Trait,
     repository: &impl repository::Trait,
 ) -> Result<Response, Error> {
-    let user = repository.find_user_by_username(request.username).await?;
+    let (user, roles) = repository.find_user_by_username(request.username).await?;
     password_hasher.verify_password(request.password, &user.password_hash)?;
     let claims = app_trait::jwt_manager::Claims {
-        sub: user.id.to_string(),
+        sub: user.id,
         exp: 0, // exp will be set in create_token method
+        roles: roles,
         security_stamp: user.security_stamp,
     };
     let token = jwt_manager.create_token(claims, Duration::from_secs(3600))?;

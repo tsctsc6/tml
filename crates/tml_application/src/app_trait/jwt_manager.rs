@@ -10,8 +10,9 @@ pub enum Error {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Claims {
-    pub sub: String,
+    pub sub: i64,
     pub exp: u128,
+    pub roles: Vec<String>,
     pub security_stamp: uuid::Uuid,
 }
 

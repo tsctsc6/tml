@@ -2,7 +2,7 @@ use axum::{Json, extract::State, http::StatusCode};
 use serde::{Deserialize, Serialize};
 use tml_application::usecase::mgmt::create_storage;
 
-use crate::app_state::AppState;
+use crate::{app_state::AppState, extractor::Claims};
 
 #[derive(Deserialize, Debug)]
 pub struct RequestBody {
@@ -30,9 +30,13 @@ impl ResponseBody {
 #[axum::debug_handler]
 pub async fn handle(
     State(state): State<AppState>,
+    claims: Claims,
     Json(request_body): Json<RequestBody>,
 ) -> (StatusCode, Json<ResponseBody>) {
     tracing::info!("Received request: {:?}", request_body);
+    if !claims.inner.roles.iter().any(|role| role == "admin") {
+        return (StatusCode::FORBIDDEN, Json(ResponseBody::default()));
+    }
     match create_storage::handle(
         create_storage::Request {
             name: &request_body.name,

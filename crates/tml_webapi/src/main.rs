@@ -2,6 +2,7 @@ pub mod app_state;
 pub mod command;
 pub mod config;
 pub mod endpoint;
+pub mod extractor;
 pub mod logger;
 pub mod manage;
 
@@ -88,14 +89,16 @@ async fn start(app_state: AppState) -> ExitCode {
             return ExitCode::FAILURE;
         }
     };
-    let app = axum::Router::new()
-        .route("/", get(|| async { "Hello, World!" }))
+    let user_routes = axum::Router::new()
         .route("/register", post(endpoint::auth::register::handle))
-        .route("/login", post(endpoint::auth::login::handle))
-        .route(
-            "/create_storage",
-            post(endpoint::mgmt::create_storage::handle),
-        )
+        .route("/login", post(endpoint::auth::login::handle));
+    let mgmt_routes = axum::Router::new().route(
+        "/create_storage",
+        post(endpoint::mgmt::create_storage::handle),
+    );
+    let app = axum::Router::new()
+        .nest("/api/mgmt", mgmt_routes)
+        .nest("/api/user", user_routes)
         .with_state(app_state);
     match axum::serve(listener, app).await {
         Ok(_) => {}
