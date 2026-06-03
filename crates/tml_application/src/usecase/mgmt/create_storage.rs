@@ -5,6 +5,8 @@ pub mod repository {
     pub enum Error {
         #[error("Name duplication")]
         NameDuplication,
+        #[error("Path duplication")]
+        PathDuplication,
         #[error("Unknown error: {0}")]
         Unknown(String),
     }

@@ -27,8 +27,15 @@ impl create_storage::repository::Trait for Repository {
         let new_storage = match storage_to_create.insert(&self.db).await {
             Ok(storage) => storage,
             Err(e) => match e.sql_err() {
-                Some(SqlErr::UniqueConstraintViolation(_)) => {
+                Some(SqlErr::UniqueConstraintViolation(detail))
+                    if detail.contains("storage_name_key") =>
+                {
                     return Err(create_storage::repository::Error::NameDuplication);
+                }
+                Some(SqlErr::UniqueConstraintViolation(detail))
+                    if detail.contains("storage_path_key") =>
+                {
+                    return Err(create_storage::repository::Error::PathDuplication);
                 }
                 _ => {
                     return Err(create_storage::repository::Error::Unknown(e.to_string()));

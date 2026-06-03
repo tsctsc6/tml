@@ -33,14 +33,15 @@ impl update_storage::repository::Trait for Repository {
         let updated_storage = match storage_to_update.update(&self.db).await {
             Ok(storage) => storage,
             Err(e) => match e.sql_err() {
-                Some(SqlErr::UniqueConstraintViolation(detail)) => {
-                    if detail.contains("storage_name_key") {
-                        return Err(update_storage::repository::Error::NameDuplication);
-                    } else if detail.contains("storage_path_key") {
-                        return Err(update_storage::repository::Error::PathDuplication);
-                    } else {
-                        return Err(update_storage::repository::Error::Unknown(detail));
-                    }
+                Some(SqlErr::UniqueConstraintViolation(detail))
+                    if detail.contains("storage_name_key") =>
+                {
+                    return Err(update_storage::repository::Error::NameDuplication);
+                }
+                Some(SqlErr::UniqueConstraintViolation(detail))
+                    if detail.contains("storage_path_key") =>
+                {
+                    return Err(update_storage::repository::Error::PathDuplication);
                 }
                 _ => {
                     return Err(update_storage::repository::Error::Unknown(e.to_string()));

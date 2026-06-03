@@ -90,6 +90,16 @@ pub async fn handle(
                             }),
                         );
                     }
+                    create_storage::repository::Error::PathDuplication => {
+                        return (
+                            StatusCode::OK,
+                            Json(ResponseBody {
+                                success: false,
+                                message: Some("The path is already exists".into()),
+                                id: None,
+                            }),
+                        );
+                    }
                     create_storage::repository::Error::Unknown(_) => {
                         return (
                             StatusCode::INTERNAL_SERVER_ERROR,
