@@ -14,3 +14,12 @@ pub struct Model {
 }
 
 impl ActiveModelBehavior for ActiveModel {}
+
+impl From<Model> for tml_domain::model::auth::role::Model {
+    fn from(model: Model) -> Self {
+        tml_domain::model::auth::role::Model {
+            id: model.id,
+            name: model.name,
+        }
+    }
+}

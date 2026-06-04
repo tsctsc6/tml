@@ -33,6 +33,7 @@ impl MigrationTrait for Migration {
                     .col(string("password_hash"))
                     .col(boolean("enabled"))
                     .col(timestamp_with_time_zone("created_at"))
+                    .col(uuid("security_stamp"))
                     .to_owned(),
             )
             .await?;
@@ -51,8 +52,8 @@ impl MigrationTrait for Migration {
                 Table::create()
                     .table(("auth", "user_role"))
                     .if_not_exists()
-                    .col(integer("user_id"))
-                    .col(integer("role_id"))
+                    .col(big_integer("user_id"))
+                    .col(big_integer("role_id"))
                     .primary_key(
                         Index::create()
                             .name("pk-user_role")
@@ -383,6 +384,22 @@ impl MigrationTrait for Migration {
                     .to_owned(),
             )
             .await?;
+
+        let stmt = Query::insert()
+            .into_table(("auth", "role"))
+            .columns(["name"])
+            .values_panic(["admin".into()])
+            .to_owned();
+
+        manager.execute(stmt).await?;
+
+        let stmt = Query::insert()
+            .into_table(("auth", "role"))
+            .columns(["name"])
+            .values_panic(["normal-user".into()])
+            .to_owned();
+
+        manager.execute(stmt).await?;
 
         Ok(())
     }

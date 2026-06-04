@@ -1,0 +1,13 @@
+listening_address = "127.0.0.1:9000"
+log_level = "info"
+
+[database]
+connection_string = "postgres://username:password@host/database"
+
+[jwt]
+secret = "32byte"
+exp_in_seconds = 3600
+
+[user_id_security_stamp_cache]
+max_capacity = 100
+time_to_live_in_second = 1800

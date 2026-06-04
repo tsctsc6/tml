@@ -11,6 +11,7 @@ pub struct Model {
     pub password_hash: String,
     pub enabled: bool,
     pub created_at: chrono::DateTime<chrono::Utc>,
+    pub security_stamp: uuid::Uuid,
     #[sea_orm(has_many, via = "user_role")]
     pub roles: HasMany<super::role::Entity>,
     #[sea_orm(has_many)]
@@ -19,14 +20,15 @@ pub struct Model {
 
 impl ActiveModelBehavior for ActiveModel {}
 
-// impl From<Model> for domain::model::user::Model {
-//     fn from(model: Model) -> Self {
-//         domain::model::user::Model {
-//             id: model.id,
-//             username: model.username,
-//             password_hash: model.password_hash,
-//             enabled: model.enabled,
-//             created_at: model.created_at,
-//         }
-//     }
-// }
+impl From<Model> for tml_domain::model::auth::user::Model {
+    fn from(model: Model) -> Self {
+        tml_domain::model::auth::user::Model {
+            id: model.id,
+            username: model.username,
+            password_hash: model.password_hash,
+            enabled: model.enabled,
+            created_at: model.created_at,
+            security_stamp: model.security_stamp,
+        }
+    }
+}

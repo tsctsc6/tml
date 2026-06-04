@@ -9,7 +9,18 @@ pub struct Model {
     #[sea_orm(unique)]
     pub name: String,
     #[sea_orm(unique)]
+    /// use / as path separator
     pub path: String,
 }
 
 impl ActiveModelBehavior for ActiveModel {}
+
+impl From<Model> for tml_domain::model::mgmt::storage::Model {
+    fn from(model: Model) -> Self {
+        tml_domain::model::mgmt::storage::Model {
+            id: model.id,
+            name: model.name,
+            path: model.path,
+        }
+    }
+}

@@ -1,0 +1,115 @@
+{
+    // 使用 IntelliSense 了解相关属性。 
+    // 悬停以查看现有属性的描述。
+    // 欲了解更多信息，请访问: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug executable 'tml_webapi' webapi",
+            "type": "lldb",
+            "request": "launch",
+            "cargo": {
+                "args": [
+                    "run",
+                    "--bin=tml_webapi",
+                    "--package=tml_webapi"
+                ]
+            },
+            "args": ["start"]
+        },
+        {
+            "name": "Debug unit tests in library 'tml_application'",
+            "type": "lldb",
+            "request": "launch",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--package=tml_application"
+                ]
+            }
+        },
+        {
+            "name": "Debug unit tests in library 'tml_domain'",
+            "type": "lldb",
+            "request": "launch",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--package=tml_domain"
+                ]
+            }
+        },
+        {
+            "name": "Debug unit tests in library 'tml_infrastructure'",
+            "type": "lldb",
+            "request": "launch",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--package=tml_infrastructure"
+                ]
+            }
+        },
+        {
+            "name": "Debug unit tests in library 'tml_migration'",
+            "type": "lldb",
+            "request": "launch",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--package=tml_migration"
+                ]
+            }
+        },
+        {
+            "name": "Debug executable 'tml_migration'",
+            "type": "lldb",
+            "request": "launch",
+            "cargo": {
+                "args": [
+                    "run",
+                    "--bin=tml_migration",
+                    "--package=tml_migration"
+                ]
+            },
+            "args": []
+        },
+        {
+            "name": "Debug unit tests in executable 'tml_migration'",
+            "type": "lldb",
+            "request": "launch",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--bin=tml_migration",
+                    "--package=tml_migration"
+                ]
+            }
+        },
+        {
+            "name": "Debug executable 'tml_webapi'",
+            "type": "lldb",
+            "request": "launch",
+            "cargo": {
+                "args": [
+                    "run",
+                    "--bin=tml_webapi",
+                    "--package=tml_webapi"
+                ]
+            },
+            "args": []
+        },
+        {
+            "name": "Debug unit tests in executable 'tml_webapi'",
+            "type": "lldb",
+            "request": "launch",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--bin=tml_webapi",
+                    "--package=tml_webapi"
+                ]
+            }
+        }
+    ]
+}
