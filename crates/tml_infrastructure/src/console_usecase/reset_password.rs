@@ -5,11 +5,11 @@ use tml_application::console_usecase::reset_password;
 
 pub struct Repository {
     db: sea_orm::DatabaseConnection,
-    cache: Cache<i64, uuid::Uuid>,
+    cache: Cache<i64, Option<uuid::Uuid>>,
 }
 
 impl Repository {
-    pub fn new(db: sea_orm::DatabaseConnection, cache: Cache<i64, uuid::Uuid>) -> Self {
+    pub fn new(db: sea_orm::DatabaseConnection, cache: Cache<i64, Option<uuid::Uuid>>) -> Self {
         Repository { db, cache }
     }
 }
@@ -38,6 +38,7 @@ impl reset_password::repository::Trait for Repository {
                     reset_password::repository::Error::Unknown(e.to_string())
                 })?;
         self.cache.invalidate(&user.id).await;
+        self.cache.run_pending_tasks().await;
         Ok(())
     }
 }

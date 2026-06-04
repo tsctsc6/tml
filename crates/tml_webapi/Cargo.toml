@@ -22,3 +22,4 @@ tracing-appender = { workspace = true }
 tracing-subscriber = { workspace = true }
 axum = { workspace = true }
 moka = { workspace = true }
+uuid = { workspace = true }

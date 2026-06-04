@@ -6,11 +6,11 @@ use tml_application::usecase::auth::login;
 
 pub struct Repository {
     db: sea_orm::DatabaseConnection,
-    cache: Cache<i64, uuid::Uuid>,
+    cache: Cache<i64, Option<uuid::Uuid>>,
 }
 
 impl Repository {
-    pub fn new(db: sea_orm::DatabaseConnection, cache: Cache<i64, uuid::Uuid>) -> Self {
+    pub fn new(db: sea_orm::DatabaseConnection, cache: Cache<i64, Option<uuid::Uuid>>) -> Self {
         Repository { db, cache }
     }
 }
@@ -28,7 +28,6 @@ impl login::repository::Trait for Repository {
                 login::repository::Error::Unknown(e.to_string())
             })?
             .ok_or(login::repository::Error::UserNotFound)?;
-        self.cache.insert(user.id, user.security_stamp).await;
         let roles = user
             .find_related(role::Entity)
             .all(&self.db)
@@ -39,6 +38,8 @@ impl login::repository::Trait for Repository {
             .into_iter()
             .map(|x| x.name)
             .collect();
+        self.cache.invalidate(&user.id).await;
+        self.cache.run_pending_tasks().await;
         Ok((user.into(), roles))
     }
 }
