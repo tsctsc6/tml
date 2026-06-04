@@ -18,10 +18,10 @@ pub struct ResponseBody {
 }
 
 impl ResponseBody {
-    fn default() -> ResponseBody {
+    fn failed(message: Option<String>) -> ResponseBody {
         ResponseBody {
             success: false,
-            message: None,
+            message,
             id: None,
         }
     }
@@ -35,7 +35,7 @@ pub async fn handle(
 ) -> (StatusCode, Json<ResponseBody>) {
     tracing::info!("Received request: {:?}", request_body);
     if !claims.inner.roles.iter().any(|role| role == "admin") {
-        return (StatusCode::FORBIDDEN, Json(ResponseBody::default()));
+        return (StatusCode::FORBIDDEN, Json(ResponseBody::failed(None)));
     }
     match create_storage::handle(
         create_storage::Request {
@@ -61,21 +61,13 @@ pub async fn handle(
                     create_storage::validation::Error::NameTooLong => {
                         return (
                             StatusCode::OK,
-                            Json(ResponseBody {
-                                success: false,
-                                message: Some("The name is too long".into()),
-                                id: None,
-                            }),
+                            Json(ResponseBody::failed(Some("The name is too long".into()))),
                         );
                     }
                     create_storage::validation::Error::InvalidPath => {
                         return (
                             StatusCode::OK,
-                            Json(ResponseBody {
-                                success: false,
-                                message: Some("The path is invalid".into()),
-                                id: None,
-                            }),
+                            Json(ResponseBody::failed(Some("The path is invalid".into()))),
                         );
                     }
                 },
@@ -83,27 +75,23 @@ pub async fn handle(
                     create_storage::repository::Error::NameDuplication => {
                         return (
                             StatusCode::OK,
-                            Json(ResponseBody {
-                                success: false,
-                                message: Some("The name is already exists".into()),
-                                id: None,
-                            }),
+                            Json(ResponseBody::failed(Some(
+                                "The name is already exists".into(),
+                            ))),
                         );
                     }
                     create_storage::repository::Error::PathDuplication => {
                         return (
                             StatusCode::OK,
-                            Json(ResponseBody {
-                                success: false,
-                                message: Some("The path is already exists".into()),
-                                id: None,
-                            }),
+                            Json(ResponseBody::failed(Some(
+                                "The path is already exists".into(),
+                            ))),
                         );
                     }
                     create_storage::repository::Error::Unknown(_) => {
                         return (
                             StatusCode::INTERNAL_SERVER_ERROR,
-                            Json(ResponseBody::default()),
+                            Json(ResponseBody::failed(None)),
                         );
                     }
                 },

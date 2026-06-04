@@ -16,10 +16,10 @@ pub struct ResponseBody {
 }
 
 impl ResponseBody {
-    fn default() -> ResponseBody {
+    fn failed(message: Option<String>) -> ResponseBody {
         ResponseBody {
             success: false,
-            message: None,
+            message,
         }
     }
 }
@@ -32,7 +32,7 @@ pub async fn handle(
 ) -> (StatusCode, Json<ResponseBody>) {
     tracing::info!("Received request: {:?}", request_body);
     if !claims.inner.roles.iter().any(|role| role == "admin") {
-        return (StatusCode::FORBIDDEN, Json(ResponseBody::default()));
+        return (StatusCode::FORBIDDEN, Json(ResponseBody::failed(None)));
     }
     match delete_storage::handle(
         delete_storage::Request {
@@ -56,16 +56,15 @@ pub async fn handle(
                     delete_storage::repository::Error::StorageNotFound => {
                         return (
                             StatusCode::OK,
-                            Json(ResponseBody {
-                                success: false,
-                                message: Some("The storage is not found".into()),
-                            }),
+                            Json(ResponseBody::failed(Some(
+                                "The storage is not found".into(),
+                            ))),
                         );
                     }
                     delete_storage::repository::Error::Unknown(_) => {
                         return (
                             StatusCode::INTERNAL_SERVER_ERROR,
-                            Json(ResponseBody::default()),
+                            Json(ResponseBody::failed(None)),
                         );
                     }
                 },
