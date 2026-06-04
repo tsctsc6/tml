@@ -22,7 +22,7 @@ pub async fn init(username: &str, app_state: AppState) -> Result<(), Error> {
             username,
             password: &new_password,
         },
-        &*app_state.password_hasher,
+        &app_state.password_hasher,
         &tml_infrastructure::console_usecase::init_admin::Repository::new(app_state.db),
     )
     .await?;
@@ -39,7 +39,7 @@ pub async fn reset_password(username: &str, app_state: AppState) -> Result<(), E
             username,
             password: &new_password,
         },
-        &*app_state.password_hasher,
+        &app_state.password_hasher,
         &tml_infrastructure::console_usecase::reset_password::Repository::new(
             app_state.db,
             app_state.user_id_security_stamp_cache,

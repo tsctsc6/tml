@@ -10,8 +10,8 @@ use crate::{command::Cli, config::AppConfig};
 pub struct AppState {
     pub app_config: Arc<AppConfig>,
     pub cli: Arc<Cli>,
-    pub password_hasher: Arc<tml_infrastructure::password_hasher::PasswordHasher>,
-    pub jwt_manager: Arc<tml_infrastructure::jwt_manager::JwtManager>,
+    pub password_hasher: tml_infrastructure::password_hasher::PasswordHasher,
+    pub jwt_manager: tml_infrastructure::jwt_manager::JwtManager,
     pub db: DatabaseConnection,
     /// Cache-Aside Pattern
     pub user_id_security_stamp_cache: Cache<i64, Option<uuid::Uuid>>,

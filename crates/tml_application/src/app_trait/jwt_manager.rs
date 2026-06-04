@@ -1,5 +1,3 @@
-use std::time::Duration;
-
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, thiserror::Error)]
@@ -16,8 +14,8 @@ pub struct Claims {
     pub security_stamp: uuid::Uuid,
 }
 
-pub trait Trait: Send + Sync + 'static {
+pub trait Trait: Send + Sync + Clone {
     /// claims.exp will be set in method
-    fn create_token(&self, claims: Claims, exp: Duration) -> Result<String, Error>;
+    fn create_token(&self, claims: Claims) -> Result<String, Error>;
     fn verify_token(&self, token: &str) -> Result<Claims, Error>;
 }

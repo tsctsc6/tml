@@ -1,5 +1,3 @@
-use std::time::Duration;
-
 use crate::app_trait;
 
 pub mod repository {
@@ -55,6 +53,6 @@ pub async fn handle(
         roles: roles,
         security_stamp: user.security_stamp,
     };
-    let token = jwt_manager.create_token(claims, Duration::from_secs(3600))?;
+    let token = jwt_manager.create_token(claims)?;
     Ok(Response { token: Some(token) })
 }

@@ -39,8 +39,8 @@ pub async fn handle(
             username: &request_body.username,
             password: &request_body.password,
         },
-        &*state.password_hasher,
-        &*state.jwt_manager,
+        &state.password_hasher,
+        &state.jwt_manager,
         &tml_infrastructure::usecase::auth::login::Repository::new(
             state.db,
             state.user_id_security_stamp_cache,

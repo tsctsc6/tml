@@ -3,6 +3,7 @@ use argon2::{
     password_hash::{SaltString, rand_core::OsRng},
 };
 
+#[derive(Clone)]
 pub struct PasswordHasher;
 
 impl tml_application::app_trait::password_hasher::Trait for PasswordHasher {

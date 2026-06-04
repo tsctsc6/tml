@@ -6,7 +6,7 @@ pub enum Error {
     InvalidPassword,
 }
 
-pub trait Trait: Send + Sync + 'static {
+pub trait Trait: Send + Sync + Clone {
     /// Hash the input password, return PHC format string.
     fn hash_password(&self, password: &str) -> Result<String, Error>;
 

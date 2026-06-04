@@ -38,7 +38,7 @@ pub async fn handle(
             username: &request_body.username,
             password: &request_body.password,
         },
-        &*state.password_hasher,
+        &state.password_hasher,
         &tml_infrastructure::usecase::auth::register::Repository::new(state.db),
     )
     .await

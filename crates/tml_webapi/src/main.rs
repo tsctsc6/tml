@@ -37,7 +37,7 @@ async fn main() -> ExitCode {
         }
     };
 
-    let db = match Database::connect(&app_config.connect_string).await {
+    let db = match Database::connect(&app_config.database.connection_string).await {
         Ok(d) => d,
         Err(e) => {
             tracing::error!("{}", e.to_string());
@@ -64,10 +64,11 @@ async fn main() -> ExitCode {
     let app_state = AppState {
         app_config: Arc::clone(&app_config),
         cli: Arc::clone(&cli),
-        password_hasher: Arc::new(tml_infrastructure::password_hasher::PasswordHasher),
-        jwt_manager: Arc::new(tml_infrastructure::jwt_manager::JwtManager::new(
-            app_config.jwt_secret_key.clone(),
-        )),
+        password_hasher: tml_infrastructure::password_hasher::PasswordHasher,
+        jwt_manager: tml_infrastructure::jwt_manager::JwtManager::new(
+            &app_config.jwt.secret,
+            app_config.jwt.exp_in_seconds,
+        ),
         db,
         user_id_security_stamp_cache,
     };
