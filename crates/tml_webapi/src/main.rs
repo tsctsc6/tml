@@ -101,6 +101,10 @@ async fn start(app_state: AppState) -> ExitCode {
         .route(
             "/update_storage",
             post(endpoint::mgmt::update_storage::handle),
+        )
+        .route(
+            "/delete_storage",
+            post(endpoint::mgmt::delete_storage::handle),
         );
     let app = axum::Router::new()
         .nest("/api/mgmt", mgmt_routes)
