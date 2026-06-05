@@ -200,8 +200,8 @@ impl MigrationTrait for Migration {
                             .from_col("storage_id")
                             .to_tbl(("mgmt", "storage"))
                             .to_col("id")
-                            .on_delete(ForeignKeyAction::Cascade)
-                            .on_update(ForeignKeyAction::Cascade),
+                            .on_delete(ForeignKeyAction::Restrict)
+                            .on_update(ForeignKeyAction::Restrict),
                     )
                     .to_owned(),
             )
@@ -219,15 +219,17 @@ impl MigrationTrait for Migration {
             .create_index(
                 Index::create()
                     .table(("app", "music_info"))
-                    .name("idx-music_info_storage_id")
+                    .name("idx-music_info_storage_id_file_path")
                     .col("storage_id")
+                    .col("file_path")
+                    .unique()
                     .to_owned(),
             )
             .await?;
         manager
             .create_table(
                 Table::create()
-                    .table(("app", "performer"))
+                    .table(("app", "artist"))
                     .if_not_exists()
                     .col(big_pk_auto("id"))
                     .col(string("name").unique_key())
@@ -267,20 +269,20 @@ impl MigrationTrait for Migration {
         manager
             .create_table(
                 Table::create()
-                    .table(("app", "music_info_performer"))
+                    .table(("app", "music_info_artist"))
                     .if_not_exists()
                     .col(big_integer("music_info_id").not_null())
-                    .col(big_integer("performer_id").not_null())
+                    .col(big_integer("artist_id").not_null())
                     .primary_key(
                         Index::create()
-                            .name("pk-music_info_performer")
+                            .name("pk-music_info_artist")
                             .col("music_info_id")
-                            .col("performer_id"),
+                            .col("artist_id"),
                     )
                     .foreign_key(
                         ForeignKey::create()
-                            .name("fk-music_info_performer_music_info_id")
-                            .from_tbl(("app", "music_info_performer"))
+                            .name("fk-music_info_artist_music_info_id")
+                            .from_tbl(("app", "music_info_artist"))
                             .from_col("music_info_id")
                             .to_tbl(("app", "music_info"))
                             .to_col("id")
@@ -289,10 +291,10 @@ impl MigrationTrait for Migration {
                     )
                     .foreign_key(
                         ForeignKey::create()
-                            .name("fk-music_info_performer_performer_id")
-                            .from_tbl(("app", "music_info_performer"))
-                            .from_col("performer_id")
-                            .to_tbl(("app", "performer"))
+                            .name("fk-music_info_artist_artist_id")
+                            .from_tbl(("app", "music_info_artist"))
+                            .from_col("artist_id")
+                            .to_tbl(("app", "artist"))
                             .to_col("id")
                             .on_delete(ForeignKeyAction::Cascade)
                             .on_update(ForeignKeyAction::Cascade),
@@ -351,20 +353,20 @@ impl MigrationTrait for Migration {
         manager
             .create_table(
                 Table::create()
-                    .table(("app", "album_performer"))
+                    .table(("app", "album_artist"))
                     .if_not_exists()
                     .col(big_integer("album_id").not_null())
-                    .col(big_integer("performer_id").not_null())
+                    .col(big_integer("artist_id").not_null())
                     .primary_key(
                         Index::create()
-                            .name("pk-album_performer")
+                            .name("pk-album_artist")
                             .col("album_id")
-                            .col("performer_id"),
+                            .col("artist_id"),
                     )
                     .foreign_key(
                         ForeignKey::create()
-                            .name("fk-album_performer_album_id")
-                            .from_tbl(("app", "album_performer"))
+                            .name("fk-album_artist_album_id")
+                            .from_tbl(("app", "album_artist"))
                             .from_col("album_id")
                             .to_tbl(("app", "album"))
                             .to_col("id")
@@ -373,10 +375,10 @@ impl MigrationTrait for Migration {
                     )
                     .foreign_key(
                         ForeignKey::create()
-                            .name("fk-album_performer_performer_id")
-                            .from_tbl(("app", "album_performer"))
-                            .from_col("performer_id")
-                            .to_tbl(("app", "performer"))
+                            .name("fk-album_artist_artist_id")
+                            .from_tbl(("app", "album_artist"))
+                            .from_col("artist_id")
+                            .to_tbl(("app", "artist"))
                             .to_col("id")
                             .on_delete(ForeignKeyAction::Cascade)
                             .on_update(ForeignKeyAction::Cascade),
@@ -406,7 +408,7 @@ impl MigrationTrait for Migration {
 
     async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
         manager
-            .drop_table(Table::drop().table(("app", "album_performer")).to_owned())
+            .drop_table(Table::drop().table(("app", "album_artist")).to_owned())
             .await?;
         manager
             .drop_table(
@@ -418,7 +420,7 @@ impl MigrationTrait for Migration {
         manager
             .drop_table(
                 Table::drop()
-                    .table(("app", "music_info_performer"))
+                    .table(("app", "music_info_artist"))
                     .to_owned(),
             )
             .await?;
@@ -426,7 +428,7 @@ impl MigrationTrait for Migration {
             .drop_table(Table::drop().table(("app", "music_list")).to_owned())
             .await?;
         manager
-            .drop_table(Table::drop().table(("app", "performer")).to_owned())
+            .drop_table(Table::drop().table(("app", "artist")).to_owned())
             .await?;
         manager
             .drop_table(Table::drop().table(("app", "music_info")).to_owned())

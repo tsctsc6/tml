@@ -7,8 +7,8 @@ pub struct Model {
     #[sea_orm(primary_key)]
     pub id: i64,
     pub title: String,
-    #[sea_orm(has_many, via = "music_info_performer")]
-    pub performers: HasMany<super::performer::Entity>,
+    #[sea_orm(has_many, via = "music_info_artist")]
+    pub artists: HasMany<super::artist::Entity>,
     pub album_id: i64,
     #[sea_orm(belongs_to, from = "album_id", to = "id")]
     pub album: HasOne<super::album::Entity>,
