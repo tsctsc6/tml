@@ -50,7 +50,7 @@ pub async fn handle(
     if !claims.inner.roles.iter().any(|role| role == "admin") {
         return (StatusCode::FORBIDDEN, Json(ResponseBody::failed(None)));
     }
-    let page_index = query.page_index.unwrap_or(1);
+    let page_index = query.page_index.unwrap_or(0);
     let page_size = query.page_size.unwrap_or(10);
     match read_all_storage::handle(
         read_all_storage::Request {
