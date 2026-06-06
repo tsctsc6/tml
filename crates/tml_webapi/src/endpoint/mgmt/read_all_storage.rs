@@ -27,7 +27,7 @@ pub struct Data {
 pub struct ResponseBody {
     pub success: bool,
     pub message: Option<String>,
-    pub data: Data,
+    pub data: Option<Data>,
 }
 
 impl ResponseBody {
@@ -35,10 +35,7 @@ impl ResponseBody {
         ResponseBody {
             success: false,
             message,
-            data: Data {
-                total: 0,
-                items: vec![],
-            },
+            data: None,
         }
     }
 }
@@ -69,7 +66,7 @@ pub async fn handle(
             Json(ResponseBody {
                 success: true,
                 message: None,
-                data: Data {
+                data: Some(Data {
                     total: response.total,
                     items: response
                         .items
@@ -80,7 +77,7 @@ pub async fn handle(
                             path: item.path,
                         })
                         .collect(),
-                },
+                }),
             }),
         ),
         Err(e) => {
