@@ -38,7 +38,6 @@ impl reset_password::repository::Trait for Repository {
                     reset_password::repository::Error::Unknown(e.to_string())
                 })?;
         self.cache.invalidate(&user.id).await;
-        self.cache.run_pending_tasks().await;
         Ok(())
     }
 }
