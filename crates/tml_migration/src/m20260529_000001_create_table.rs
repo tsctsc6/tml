@@ -176,12 +176,11 @@ impl MigrationTrait for Migration {
                 Table::create()
                     .table(("app", "music_info"))
                     .if_not_exists()
-                    .col(big_pk_auto("id"))
-                    .col(string("title").not_null())
-                    .col(json("artists").not_null())
+                    .col(binary("id").primary_key())
+                    .col(array("artists", ColumnType::String(StringLen::None)).not_null())
                     .col(string("album").not_null())
+                    .col(string("title").not_null())
                     .col(integer("track_number").not_null())
-                    .col(string("file_path").not_null())
                     .col(big_integer("storage_id").not_null())
                     .foreign_key(
                         ForeignKey::create()
@@ -193,6 +192,7 @@ impl MigrationTrait for Migration {
                             .on_delete(ForeignKeyAction::Restrict)
                             .on_update(ForeignKeyAction::Restrict),
                     )
+                    .col(string("file_path").not_null())
                     .to_owned(),
             )
             .await?;
@@ -200,10 +200,8 @@ impl MigrationTrait for Migration {
             .create_index(
                 Index::create()
                     .table(("app", "music_info"))
-                    .name("idx-music_info-storage_id_file_path")
+                    .name("idx-music_info-storage_id")
                     .col("storage_id")
-                    .col("file_path")
-                    .unique()
                     .to_owned(),
             )
             .await?;
@@ -243,7 +241,7 @@ impl MigrationTrait for Migration {
                     .table(("app", "music_info_music_list"))
                     .if_not_exists()
                     .col(big_integer("music_list_id").not_null())
-                    .col(big_integer("music_info_id").not_null())
+                    .col(binary("music_info_id").not_null())
                     .primary_key(
                         Index::create()
                             .name("pk-music_info_music_list")
