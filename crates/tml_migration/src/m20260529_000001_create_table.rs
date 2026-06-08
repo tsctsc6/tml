@@ -94,43 +94,14 @@ impl MigrationTrait for Migration {
             .await?;
 
         manager
-            .create_type(
-                extension::postgres::Type::create()
-                    .as_enum(("mgmt", "job_type"))
-                    .values([
-                        "undefined",
-                        "scan_incremental",
-                        "build_index",
-                        "update_index",
-                    ])
-                    .to_owned(),
-            )
-            .await?;
-        manager
-            .create_type(
-                extension::postgres::Type::create()
-                    .as_enum(("mgmt", "job_status"))
-                    .values(["undefined", "waiting_start", "running", "completed"])
-                    .to_owned(),
-            )
-            .await?;
-        manager
             .create_table(
                 Table::create()
                     .table(("mgmt", "job"))
                     .if_not_exists()
                     .col(big_pk_auto("id"))
-                    .col(
-                        ColumnDef::new("job_type")
-                            .custom("mgmt.job_type")
-                            .not_null(),
-                    )
+                    .col(tiny_integer("job_type"))
                     .col(json("job_args"))
-                    .col(
-                        ColumnDef::new("job_status")
-                            .custom("mgmt.job_status")
-                            .not_null(),
-                    )
+                    .col(tiny_integer("status"))
                     .col(string("description"))
                     .col(string("error_message"))
                     .col(boolean("success"))
@@ -326,22 +297,6 @@ impl MigrationTrait for Migration {
             .await?;
         manager
             .drop_table(Table::drop().table(("mgmt", "job")).to_owned())
-            .await?;
-        manager
-            .drop_type(
-                extension::postgres::Type::drop()
-                    .if_exists()
-                    .name(("mgmt", "job_status"))
-                    .to_owned(),
-            )
-            .await?;
-        manager
-            .drop_type(
-                extension::postgres::Type::drop()
-                    .if_exists()
-                    .name(("mgmt", "job_type"))
-                    .to_owned(),
-            )
             .await?;
         manager
             .drop_table(Table::drop().table(("auth", "user_role")).to_owned())

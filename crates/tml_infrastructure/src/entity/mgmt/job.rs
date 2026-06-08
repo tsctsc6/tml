@@ -21,28 +21,59 @@ pub struct Model {
 
 impl ActiveModelBehavior for ActiveModel {}
 
-#[derive(Debug, Clone, PartialEq, Eq, EnumIter, DeriveActiveEnum)]
-#[sea_orm(rs_type = "String", db_type = "Enum", enum_name = "job_type")]
-pub enum JobType {
-    #[sea_orm(string_value = "undefined")]
-    Undefined,
-    #[sea_orm(string_value = "scan_incremental")]
-    ScanIncremental,
-    #[sea_orm(string_value = "build_index")]
-    BuildIndex,
-    #[sea_orm(string_value = "update_index")]
-    UpdateIndex,
+impl From<Model> for tml_domain::model::mgmt::job::Model {
+    fn from(model: Model) -> Self {
+        tml_domain::model::mgmt::job::Model {
+            id: model.id,
+            job_type: model.job_type.into(),
+            job_args: model.job_args,
+            status: model.status.into(),
+            description: model.description,
+            error_message: model.error_message,
+            success: model.success,
+            created_by_id: model.created_by_id,
+            created_at: model.created_at,
+            completed_at: model.completed_at,
+        }
+    }
+}
+
+impl From<JobType> for tml_domain::model::mgmt::job::JobType {
+    fn from(job_type: JobType) -> Self {
+        match job_type {
+            JobType::Undefined => tml_domain::model::mgmt::job::JobType::Undefined,
+            JobType::ScanIncremental => tml_domain::model::mgmt::job::JobType::ScanIncremental,
+            JobType::BuildIndex => tml_domain::model::mgmt::job::JobType::BuildIndex,
+            JobType::UpdateIndex => tml_domain::model::mgmt::job::JobType::UpdateIndex,
+        }
+    }
+}
+
+impl From<JobStatus> for tml_domain::model::mgmt::job::JobStatus {
+    fn from(status: JobStatus) -> Self {
+        match status {
+            JobStatus::Undefined => tml_domain::model::mgmt::job::JobStatus::Undefined,
+            JobStatus::WaitingStart => tml_domain::model::mgmt::job::JobStatus::WaitingStart,
+            JobStatus::Running => tml_domain::model::mgmt::job::JobStatus::Running,
+            JobStatus::Completed => tml_domain::model::mgmt::job::JobStatus::Completed,
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, EnumIter, DeriveActiveEnum)]
-#[sea_orm(rs_type = "String", db_type = "Enum", enum_name = "job_status")]
+#[sea_orm(rs_type = "i16", db_type = "SmallInteger")]
+pub enum JobType {
+    Undefined = 0,
+    ScanIncremental = 1,
+    BuildIndex = 2,
+    UpdateIndex = 3,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, EnumIter, DeriveActiveEnum)]
+#[sea_orm(rs_type = "i16", db_type = "SmallInteger")]
 pub enum JobStatus {
-    #[sea_orm(string_value = "undefined")]
-    Undefined,
-    #[sea_orm(string_value = "waiting_start")]
-    WaitingStart,
-    #[sea_orm(string_value = "running")]
-    Running,
-    #[sea_orm(string_value = "completed")]
-    Completed,
+    Undefined = 0,
+    WaitingStart = 1,
+    Running = 2,
+    Completed = 3,
 }
