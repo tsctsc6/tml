@@ -14,10 +14,7 @@ impl Repository {
 
 #[async_trait::async_trait]
 impl delete_storage::repository::Trait for Repository {
-    async fn delete_storage(
-        &self,
-        id: i64,
-    ) -> Result<(), delete_storage::repository::Error> {
+    async fn delete_storage(&self, id: i64) -> Result<(), delete_storage::repository::Error> {
         let result = storage::Entity::delete_by_id(id)
             .exec(&self.db)
             .await

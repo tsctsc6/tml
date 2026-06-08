@@ -18,8 +18,7 @@ impl read_all_storage::repository::Trait for Repository {
         &self,
         page_index: u64,
         page_size: u64,
-    ) -> Result<read_all_storage::repository::PageResult, read_all_storage::repository::Error>
-    {
+    ) -> Result<read_all_storage::repository::PageResult, read_all_storage::repository::Error> {
         let paginator = storage::Entity::find()
             .order_by_asc(storage::Column::Id)
             .paginate(&self.db, page_size);
