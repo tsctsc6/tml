@@ -8,9 +8,13 @@ pub struct Model {
     #[sea_orm(primary_key)]
     pub id: Vec<u8>,
     pub artists: Vec<String>,
-    pub album: String,
+    pub album_title: String,
     pub title: String,
     pub track_number: i32,
+    pub audio_bitrate: i32,
+    pub sample_rate: i32,
+    pub channels: i8,
+    pub bit_depth: i8,
     pub storage_id: i64,
     pub file_path: String,
     #[sea_orm(has_many, via = "music_info_music_list")]
