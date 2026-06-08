@@ -1,4 +1,4 @@
-use std::ffi::OsStr;
+use std::{collections::BTreeMap, ffi::OsStr};
 
 use lofty::{
     file::{AudioFile, TaggedFileExt},
@@ -6,6 +6,7 @@ use lofty::{
 };
 use tml_application::app_trait::music_info_provider::MusicInfo;
 use walkdir::WalkDir;
+use xxhash_rust::xxh3::xxh3_128;
 
 #[derive(Clone)]
 pub struct MusicInfoProvider;
@@ -26,6 +27,8 @@ pub enum Error {
     ParseIntError(#[from] std::num::ParseIntError),
     #[error("Try from int error: {0}")]
     TryFromIntError(#[from] std::num::TryFromIntError),
+    #[error("Json error: {0}")]
+    JsonError(#[from] serde_json::error::Error),
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -46,7 +49,10 @@ impl MusicInfoProvider {
     fn map_to_music_info(
         &self,
         entry: Result<walkdir::DirEntry, walkdir::Error>,
-    ) -> Option<tml_application::app_trait::music_info_provider::MusicInfo> {
+    ) -> Option<(
+        Vec<u8>,
+        tml_application::app_trait::music_info_provider::MusicInfo,
+    )> {
         match self.map_to_music_info_result(entry) {
             Ok(m) => {
                 return Some(m);
@@ -61,7 +67,13 @@ impl MusicInfoProvider {
     fn map_to_music_info_result(
         &self,
         entry: Result<walkdir::DirEntry, walkdir::Error>,
-    ) -> Result<tml_application::app_trait::music_info_provider::MusicInfo, Error> {
+    ) -> Result<
+        (
+            Vec<u8>,
+            tml_application::app_trait::music_info_provider::MusicInfo,
+        ),
+        Error,
+    > {
         let entry = entry?;
         if entry.path().is_dir() {
             return Err(Error::Skiped);
@@ -112,7 +124,15 @@ impl MusicInfoProvider {
             channels: channels.into(),
             bit_depth: bit_depth.into(),
         };
-        return Ok(music_info);
+        // order the keies
+        let json_value = serde_json::to_value(&music_info)?;
+        let sorted_map: BTreeMap<String, serde_json::Value> =
+            serde_json::from_value(json_value).unwrap();
+        let json = serde_json::to_string(&sorted_map)?;
+        tracing::trace!("{}", json);
+        let hash_128 = xxh3_128(json.as_bytes());
+        tracing::trace!("{:0>32X}", hash_128);
+        return Ok((hash_128.to_be_bytes().to_vec(), music_info));
     }
 }
 
@@ -120,7 +140,12 @@ impl tml_application::app_trait::music_info_provider::Trait for MusicInfoProvide
     fn scan(
         &self,
         path: &str,
-    ) -> impl Iterator<Item = tml_application::app_trait::music_info_provider::MusicInfo> {
+    ) -> impl Iterator<
+        Item = (
+            Vec<u8>,
+            tml_application::app_trait::music_info_provider::MusicInfo,
+        ),
+    > + Send {
         return WalkDir::new(path)
             .into_iter()
             .filter_map(|x| self.map_to_music_info(x));
