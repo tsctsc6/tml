@@ -95,6 +95,10 @@ async fn start(app_state: AppState) -> ExitCode {
         .route("/login", post(endpoint::auth::login::handle));
     let mgmt_routes = axum::Router::new()
         .route(
+            "/create_job",
+            post(endpoint::mgmt::create_job::handle),
+        )
+        .route(
             "/create_storage",
             post(endpoint::mgmt::create_storage::handle),
         )
@@ -126,7 +130,7 @@ async fn start(app_state: AppState) -> ExitCode {
 
 async fn manage(command: &command::ManageCommands, app_state: AppState) -> ExitCode {
     let result = match command {
-        command::ManageCommands::InitAdmin { username } => manage::init(username, app_state).await,
+        command::ManageCommands::InitAdmin { username } => manage::init_admin(username, app_state).await,
         command::ManageCommands::ResetPassword { username } => {
             manage::reset_password(username, app_state).await
         }

@@ -12,7 +12,7 @@ pub enum Error {
     ResetPasswordError(#[from] tml_application::console_usecase::reset_password::Error),
 }
 
-pub async fn init(username: &str, app_state: AppState) -> Result<(), Error> {
+pub async fn init_admin(username: &str, app_state: AppState) -> Result<(), Error> {
     let new_password = inquire::Password::new("Password:")
         .with_display_mode(inquire::PasswordDisplayMode::Masked)
         .prompt()
