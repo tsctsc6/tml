@@ -1,3 +1,3 @@
-pub mod file_scanner;
 pub mod jwt_manager;
+pub mod music_info_provider;
 pub mod password_hasher;
