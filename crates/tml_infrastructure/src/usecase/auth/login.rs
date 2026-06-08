@@ -3,6 +3,7 @@ use crate::entity::auth::user;
 use moka::future::Cache;
 use tml_application::usecase::auth::login;
 
+#[derive(Clone)]
 pub struct Repository {
     db: sea_orm::DatabaseConnection,
     cache: Cache<i64, Option<uuid::Uuid>>,

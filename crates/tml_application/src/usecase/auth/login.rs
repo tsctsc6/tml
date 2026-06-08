@@ -12,7 +12,7 @@ pub mod repository {
     }
 
     #[async_trait::async_trait]
-    pub trait Trait {
+    pub trait Trait: Send + Sync + Clone + 'static {
         async fn find_user_by_username(
             &self,
             username: &str,

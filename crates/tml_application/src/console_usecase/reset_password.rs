@@ -10,7 +10,7 @@ pub mod repository {
     }
 
     #[async_trait::async_trait]
-    pub trait Trait {
+    pub trait Trait: Send + Sync + Clone + 'static {
         async fn set_password_hash(&self, username: &str, password_hash: &str)
         -> Result<(), Error>;
     }

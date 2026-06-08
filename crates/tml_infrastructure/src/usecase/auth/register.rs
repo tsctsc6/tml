@@ -4,6 +4,7 @@ use crate::entity::auth::user_role;
 use sea_orm::{ActiveModelTrait, ActiveValue::Set, SqlErr};
 use tml_application::usecase::auth::register;
 
+#[derive(Clone)]
 pub struct Repository {
     db: sea_orm::DatabaseConnection,
 }

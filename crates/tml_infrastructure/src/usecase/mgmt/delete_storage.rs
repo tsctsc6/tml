@@ -2,6 +2,7 @@ use crate::entity::mgmt::storage;
 use sea_orm::EntityTrait;
 use tml_application::usecase::mgmt::delete_storage;
 
+#[derive(Clone)]
 pub struct Repository {
     db: sea_orm::DatabaseConnection,
 }

@@ -63,6 +63,7 @@ pub async fn handle(
             created_by_id: claims.inner.sub,
         },
         &tml_infrastructure::usecase::mgmt::create_job::Repository::new(state.db),
+        &state.music_info_provider,
     )
     .await
     {

@@ -14,7 +14,7 @@ pub mod repository {
     }
 
     #[async_trait::async_trait]
-    pub trait Trait {
+    pub trait Trait: Send + Sync + Clone + 'static {
         async fn update_storage(
             &self,
             id: i64,

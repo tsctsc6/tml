@@ -2,6 +2,7 @@ use crate::entity::mgmt::storage;
 use sea_orm::{ActiveModelTrait, ActiveValue::Set, SqlErr};
 use tml_application::usecase::mgmt::create_storage;
 
+#[derive(Clone)]
 pub struct Repository {
     db: sea_orm::DatabaseConnection,
 }

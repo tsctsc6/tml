@@ -3,6 +3,7 @@ use moka::future::Cache;
 use sea_orm::{ActiveModelTrait, ActiveValue::Set};
 use tml_application::console_usecase::reset_password;
 
+#[derive(Clone)]
 pub struct Repository {
     db: sea_orm::DatabaseConnection,
     cache: Cache<i64, Option<uuid::Uuid>>,

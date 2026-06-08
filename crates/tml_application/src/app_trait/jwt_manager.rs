@@ -14,7 +14,7 @@ pub struct Claims {
     pub security_stamp: uuid::Uuid,
 }
 
-pub trait Trait: Send + Sync + Clone {
+pub trait Trait: Send + Sync + Clone + 'static {
     /// claims.exp will be set in method
     fn create_token(&self, claims: Claims) -> Result<String, Error>;
     fn verify_token(&self, token: &str) -> Result<Claims, Error>;

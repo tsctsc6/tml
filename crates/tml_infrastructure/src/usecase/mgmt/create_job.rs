@@ -2,6 +2,7 @@ use crate::entity::mgmt::job;
 use sea_orm::{ActiveModelTrait, ActiveValue::Set};
 use tml_application::usecase::mgmt::create_job;
 
+#[derive(Clone)]
 pub struct Repository {
     db: sea_orm::DatabaseConnection,
 }

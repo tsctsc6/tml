@@ -12,7 +12,7 @@ pub mod repository {
     }
 
     #[async_trait::async_trait]
-    pub trait Trait {
+    pub trait Trait: Send + Sync + Clone + 'static {
         async fn create_storage(&self, name: &str, path: &str) -> Result<storage::Model, Error>;
     }
 }

@@ -71,6 +71,7 @@ async fn main() -> ExitCode {
         ),
         db,
         user_id_security_stamp_cache,
+        music_info_provider: tml_infrastructure::music_info_provider::MusicInfoProvider,
     };
 
     let result = match &Arc::clone(&cli).command {
@@ -94,10 +95,7 @@ async fn start(app_state: AppState) -> ExitCode {
         .route("/register", post(endpoint::auth::register::handle))
         .route("/login", post(endpoint::auth::login::handle));
     let mgmt_routes = axum::Router::new()
-        .route(
-            "/create_job",
-            post(endpoint::mgmt::create_job::handle),
-        )
+        .route("/create_job", post(endpoint::mgmt::create_job::handle))
         .route(
             "/create_storage",
             post(endpoint::mgmt::create_storage::handle),
@@ -130,7 +128,9 @@ async fn start(app_state: AppState) -> ExitCode {
 
 async fn manage(command: &command::ManageCommands, app_state: AppState) -> ExitCode {
     let result = match command {
-        command::ManageCommands::InitAdmin { username } => manage::init_admin(username, app_state).await,
+        command::ManageCommands::InitAdmin { username } => {
+            manage::init_admin(username, app_state).await
+        }
         command::ManageCommands::ResetPassword { username } => {
             manage::reset_password(username, app_state).await
         }
