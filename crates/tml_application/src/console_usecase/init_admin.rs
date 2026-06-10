@@ -10,7 +10,7 @@ pub mod repository {
     }
 
     #[async_trait::async_trait]
-    pub trait Trait {
+    pub trait Trait: Send + Sync + Clone + 'static {
         async fn is_no_admin(&self) -> Result<bool, Error>;
         async fn create_admin(
             &self,

@@ -8,7 +8,7 @@ pub mod repository {
     }
 
     #[async_trait::async_trait]
-    pub trait Trait {
+    pub trait Trait: Send + Sync + Clone + 'static {
         async fn delete_storage(&self, id: i64) -> Result<(), Error>;
     }
 }
@@ -23,10 +23,7 @@ pub enum Error {
     RepositoryError(#[from] repository::Error),
 }
 
-pub async fn handle(
-    request: Request,
-    repository: &impl repository::Trait,
-) -> Result<(), Error> {
+pub async fn handle(request: Request, repository: &impl repository::Trait) -> Result<(), Error> {
     repository.delete_storage(request.id).await?;
     Ok(())
 }

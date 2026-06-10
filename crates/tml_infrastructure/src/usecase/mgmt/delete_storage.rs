@@ -2,6 +2,7 @@ use crate::entity::mgmt::storage;
 use sea_orm::EntityTrait;
 use tml_application::usecase::mgmt::delete_storage;
 
+#[derive(Clone)]
 pub struct Repository {
     db: sea_orm::DatabaseConnection,
 }
@@ -14,10 +15,7 @@ impl Repository {
 
 #[async_trait::async_trait]
 impl delete_storage::repository::Trait for Repository {
-    async fn delete_storage(
-        &self,
-        id: i64,
-    ) -> Result<(), delete_storage::repository::Error> {
+    async fn delete_storage(&self, id: i64) -> Result<(), delete_storage::repository::Error> {
         let result = storage::Entity::delete_by_id(id)
             .exec(&self.db)
             .await

@@ -8,6 +8,7 @@ use sea_orm::QueryFilter;
 use sea_orm::{ActiveModelTrait, ActiveValue::Set};
 use tml_application::console_usecase::init_admin;
 
+#[derive(Clone)]
 pub struct Repository {
     db: sea_orm::DatabaseConnection,
 }

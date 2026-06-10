@@ -13,7 +13,7 @@ pub mod repository {
     }
 
     #[async_trait::async_trait]
-    pub trait Trait {
+    pub trait Trait: Send + Sync + Clone + 'static {
         async fn read_all_storage(&self, page: u64, page_size: u64) -> Result<PageResult, Error>;
     }
 }

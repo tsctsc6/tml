@@ -62,7 +62,7 @@ impl MigrationTrait for Migration {
                     )
                     .foreign_key(
                         ForeignKey::create()
-                            .name("fk-user_role_user_id")
+                            .name("fk-user_role-user_id")
                             .from_tbl(("auth", "user_role"))
                             .from_col("user_id")
                             .to_tbl(("auth", "user"))
@@ -72,7 +72,7 @@ impl MigrationTrait for Migration {
                     )
                     .foreign_key(
                         ForeignKey::create()
-                            .name("fk-user_role_role_id")
+                            .name("fk-user_role-role_id")
                             .from_tbl(("auth", "user_role"))
                             .from_col("role_id")
                             .to_tbl(("auth", "role"))
@@ -83,52 +83,32 @@ impl MigrationTrait for Migration {
                     .to_owned(),
             )
             .await?;
+        manager
+            .create_index(
+                Index::create()
+                    .table(("auth", "user_role"))
+                    .name("idx-user_role-role_id")
+                    .col("role_id")
+                    .to_owned(),
+            )
+            .await?;
 
-        manager
-            .create_type(
-                extension::postgres::Type::create()
-                    .as_enum(("mgmt", "job_type"))
-                    .values([
-                        "undefined",
-                        "scan_incremental",
-                        "build_index",
-                        "update_index",
-                    ])
-                    .to_owned(),
-            )
-            .await?;
-        manager
-            .create_type(
-                extension::postgres::Type::create()
-                    .as_enum(("mgmt", "job_status"))
-                    .values(["undefined", "waiting_start", "running", "completed"])
-                    .to_owned(),
-            )
-            .await?;
         manager
             .create_table(
                 Table::create()
                     .table(("mgmt", "job"))
                     .if_not_exists()
                     .col(big_pk_auto("id"))
-                    .col(
-                        ColumnDef::new("job_type")
-                            .custom("mgmt.job_type")
-                            .not_null(),
-                    )
+                    .col(tiny_integer("job_type"))
                     .col(json("job_args"))
-                    .col(
-                        ColumnDef::new("job_status")
-                            .custom("mgmt.job_status")
-                            .not_null(),
-                    )
+                    .col(tiny_integer("status"))
                     .col(string("description"))
                     .col(string("error_message"))
                     .col(boolean("success"))
                     .col(big_integer("created_by_id"))
                     .foreign_key(
                         ForeignKey::create()
-                            .name("fk-job_created_by_id")
+                            .name("fk-job-created_by_id")
                             .from_tbl(("mgmt", "job"))
                             .from_col("created_by_id")
                             .to_tbl(("auth", "user"))
@@ -145,7 +125,7 @@ impl MigrationTrait for Migration {
             .create_index(
                 Index::create()
                     .table(("mgmt", "job"))
-                    .name("idx-job_created_by_id")
+                    .name("idx-job-created_by_id")
                     .col("created_by_id")
                     .to_owned(),
             )
@@ -165,44 +145,29 @@ impl MigrationTrait for Migration {
         manager
             .create_table(
                 Table::create()
-                    .table(("app", "album"))
-                    .if_not_exists()
-                    .col(big_pk_auto("id"))
-                    .col(string("name").unique_key())
-                    .to_owned(),
-            )
-            .await?;
-        manager
-            .create_table(
-                Table::create()
                     .table(("app", "music_info"))
                     .if_not_exists()
-                    .col(big_pk_auto("id"))
+                    .col(binary("id").primary_key())
+                    .col(array("artists", ColumnType::String(StringLen::None)).not_null())
+                    .col(string("album_title").not_null())
                     .col(string("title").not_null())
-                    .col(big_integer("album_id").not_null())
-                    .foreign_key(
-                        ForeignKey::create()
-                            .name("fk-music_info_album_id")
-                            .from_tbl(("app", "music_info"))
-                            .from_col("album_id")
-                            .to_tbl(("app", "album"))
-                            .to_col("id")
-                            .on_delete(ForeignKeyAction::Cascade)
-                            .on_update(ForeignKeyAction::Cascade),
-                    )
-                    .col(integer("album_index").not_null())
-                    .col(string("file_path").not_null())
+                    .col(integer("track_number").not_null())
+                    .col(integer("audio_bitrate").not_null())
+                    .col(integer("sample_rate").not_null())
+                    .col(tiny_integer("channels").not_null())
+                    .col(tiny_integer("bit_depth").not_null())
                     .col(big_integer("storage_id").not_null())
                     .foreign_key(
                         ForeignKey::create()
-                            .name("fk-music_info_storage_id")
+                            .name("fk-music_info-storage_id")
                             .from_tbl(("app", "music_info"))
                             .from_col("storage_id")
                             .to_tbl(("mgmt", "storage"))
                             .to_col("id")
-                            .on_delete(ForeignKeyAction::Cascade)
-                            .on_update(ForeignKeyAction::Cascade),
+                            .on_delete(ForeignKeyAction::Restrict)
+                            .on_update(ForeignKeyAction::Restrict),
                     )
+                    .col(string("file_path").not_null())
                     .to_owned(),
             )
             .await?;
@@ -210,27 +175,8 @@ impl MigrationTrait for Migration {
             .create_index(
                 Index::create()
                     .table(("app", "music_info"))
-                    .name("idx-music_info_album_id")
-                    .col("album_id")
-                    .to_owned(),
-            )
-            .await?;
-        manager
-            .create_index(
-                Index::create()
-                    .table(("app", "music_info"))
-                    .name("idx-music_info_storage_id")
+                    .name("idx-music_info-storage_id")
                     .col("storage_id")
-                    .to_owned(),
-            )
-            .await?;
-        manager
-            .create_table(
-                Table::create()
-                    .table(("app", "performer"))
-                    .if_not_exists()
-                    .col(big_pk_auto("id"))
-                    .col(string("name").unique_key())
                     .to_owned(),
             )
             .await?;
@@ -244,7 +190,7 @@ impl MigrationTrait for Migration {
                     .col(big_integer("user_id").not_null())
                     .foreign_key(
                         ForeignKey::create()
-                            .name("fk-music_list_user_id")
+                            .name("fk-music_list-user_id")
                             .from_tbl(("app", "music_list"))
                             .from_col("user_id")
                             .to_tbl(("auth", "user"))
@@ -259,44 +205,8 @@ impl MigrationTrait for Migration {
             .create_index(
                 Index::create()
                     .table(("app", "music_list"))
-                    .name("idx-music_list_user_id")
+                    .name("idx-music_list-user_id")
                     .col("user_id")
-                    .to_owned(),
-            )
-            .await?;
-        manager
-            .create_table(
-                Table::create()
-                    .table(("app", "music_info_performer"))
-                    .if_not_exists()
-                    .col(big_integer("music_info_id").not_null())
-                    .col(big_integer("performer_id").not_null())
-                    .primary_key(
-                        Index::create()
-                            .name("pk-music_info_performer")
-                            .col("music_info_id")
-                            .col("performer_id"),
-                    )
-                    .foreign_key(
-                        ForeignKey::create()
-                            .name("fk-music_info_performer_music_info_id")
-                            .from_tbl(("app", "music_info_performer"))
-                            .from_col("music_info_id")
-                            .to_tbl(("app", "music_info"))
-                            .to_col("id")
-                            .on_delete(ForeignKeyAction::Cascade)
-                            .on_update(ForeignKeyAction::Cascade),
-                    )
-                    .foreign_key(
-                        ForeignKey::create()
-                            .name("fk-music_info_performer_performer_id")
-                            .from_tbl(("app", "music_info_performer"))
-                            .from_col("performer_id")
-                            .to_tbl(("app", "performer"))
-                            .to_col("id")
-                            .on_delete(ForeignKeyAction::Cascade)
-                            .on_update(ForeignKeyAction::Cascade),
-                    )
                     .to_owned(),
             )
             .await?;
@@ -305,30 +215,30 @@ impl MigrationTrait for Migration {
                 Table::create()
                     .table(("app", "music_info_music_list"))
                     .if_not_exists()
-                    .col(big_integer("music_info_id").not_null())
                     .col(big_integer("music_list_id").not_null())
+                    .col(binary("music_info_id").not_null())
                     .primary_key(
                         Index::create()
                             .name("pk-music_info_music_list")
-                            .col("music_info_id")
-                            .col("music_list_id"),
+                            .col("music_list_id")
+                            .col("music_info_id"),
                     )
                     .foreign_key(
                         ForeignKey::create()
-                            .name("fk-music_info_music_list_music_info_id")
+                            .name("fk-music_info_music_list-music_list_id")
                             .from_tbl(("app", "music_info_music_list"))
-                            .from_col("music_info_id")
-                            .to_tbl(("app", "music_info"))
+                            .from_col("music_list_id")
+                            .to_tbl(("app", "music_list"))
                             .to_col("id")
                             .on_delete(ForeignKeyAction::Cascade)
                             .on_update(ForeignKeyAction::Cascade),
                     )
                     .foreign_key(
                         ForeignKey::create()
-                            .name("fk-music_info_music_list_music_list_id")
+                            .name("fk-music_info_music_list-music_info_id")
                             .from_tbl(("app", "music_info_music_list"))
-                            .from_col("music_list_id")
-                            .to_tbl(("app", "music_list"))
+                            .from_col("music_info_id")
+                            .to_tbl(("app", "music_info"))
                             .to_col("id")
                             .on_delete(ForeignKeyAction::Cascade)
                             .on_update(ForeignKeyAction::Cascade),
@@ -341,46 +251,10 @@ impl MigrationTrait for Migration {
             .create_index(
                 Index::create()
                     .table(("app", "music_info_music_list"))
-                    .name("idx-music_list_id_order")
+                    .name("idx-music_info_music_list-music_list_id_order")
                     .col("music_list_id")
                     .col("order")
                     .unique()
-                    .to_owned(),
-            )
-            .await?;
-        manager
-            .create_table(
-                Table::create()
-                    .table(("app", "album_performer"))
-                    .if_not_exists()
-                    .col(big_integer("album_id").not_null())
-                    .col(big_integer("performer_id").not_null())
-                    .primary_key(
-                        Index::create()
-                            .name("pk-album_performer")
-                            .col("album_id")
-                            .col("performer_id"),
-                    )
-                    .foreign_key(
-                        ForeignKey::create()
-                            .name("fk-album_performer_album_id")
-                            .from_tbl(("app", "album_performer"))
-                            .from_col("album_id")
-                            .to_tbl(("app", "album"))
-                            .to_col("id")
-                            .on_delete(ForeignKeyAction::Cascade)
-                            .on_update(ForeignKeyAction::Cascade),
-                    )
-                    .foreign_key(
-                        ForeignKey::create()
-                            .name("fk-album_performer_performer_id")
-                            .from_tbl(("app", "album_performer"))
-                            .from_col("performer_id")
-                            .to_tbl(("app", "performer"))
-                            .to_col("id")
-                            .on_delete(ForeignKeyAction::Cascade)
-                            .on_update(ForeignKeyAction::Cascade),
-                    )
                     .to_owned(),
             )
             .await?;
@@ -406,9 +280,6 @@ impl MigrationTrait for Migration {
 
     async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
         manager
-            .drop_table(Table::drop().table(("app", "album_performer")).to_owned())
-            .await?;
-        manager
             .drop_table(
                 Table::drop()
                     .table(("app", "music_info_music_list"))
@@ -416,45 +287,16 @@ impl MigrationTrait for Migration {
             )
             .await?;
         manager
-            .drop_table(
-                Table::drop()
-                    .table(("app", "music_info_performer"))
-                    .to_owned(),
-            )
-            .await?;
-        manager
             .drop_table(Table::drop().table(("app", "music_list")).to_owned())
             .await?;
         manager
-            .drop_table(Table::drop().table(("app", "performer")).to_owned())
-            .await?;
-        manager
             .drop_table(Table::drop().table(("app", "music_info")).to_owned())
-            .await?;
-        manager
-            .drop_table(Table::drop().table(("app", "album")).to_owned())
             .await?;
         manager
             .drop_table(Table::drop().table(("mgmt", "storage")).to_owned())
             .await?;
         manager
             .drop_table(Table::drop().table(("mgmt", "job")).to_owned())
-            .await?;
-        manager
-            .drop_type(
-                extension::postgres::Type::drop()
-                    .if_exists()
-                    .name(("mgmt", "job_status"))
-                    .to_owned(),
-            )
-            .await?;
-        manager
-            .drop_type(
-                extension::postgres::Type::drop()
-                    .if_exists()
-                    .name(("mgmt", "job_type"))
-                    .to_owned(),
-            )
             .await?;
         manager
             .drop_table(Table::drop().table(("auth", "user_role")).to_owned())
