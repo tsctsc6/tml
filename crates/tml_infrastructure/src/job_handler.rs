@@ -70,7 +70,7 @@ impl tml_application::app_trait::job_handler::Trait for JobHandler {
     ) {
         match self.handle_inner(job_type, &job_args).await {
             Ok(_) => {
-                match self.repository.finish_job(job_id, true).await {
+                match self.repository.finish_job(job_id, true, "").await {
                     Ok(_) => {}
                     Err(e) => {
                         tracing::error!("{}", e);
@@ -81,7 +81,11 @@ impl tml_application::app_trait::job_handler::Trait for JobHandler {
             }
             Err(e) => {
                 tracing::error!("{}", e);
-                match self.repository.finish_job(job_id, false).await {
+                match self
+                    .repository
+                    .finish_job(job_id, false, &e.to_string())
+                    .await
+                {
                     Ok(_) => {}
                     Err(_) => {
                         tracing::error!("{}", e);
@@ -113,7 +117,12 @@ impl Repository {
         Repository { db }
     }
 
-    async fn finish_job(&self, job_id: i64, success: bool) -> Result<(), RepositoryError> {
+    async fn finish_job(
+        &self,
+        job_id: i64,
+        success: bool,
+        error_message: &str,
+    ) -> Result<(), RepositoryError> {
         let job_to_update = crate::entity::mgmt::job::Entity::find_by_id(job_id)
             .one(&self.db)
             .await?
@@ -121,6 +130,7 @@ impl Repository {
         let mut job_to_update: job::ActiveModel = job_to_update.into();
         job_to_update.status = Set(job::JobStatus::Completed);
         job_to_update.success = Set(success);
+        job_to_update.error_message = Set(error_message.into());
         job_to_update.completed_at = Set(Some(chrono::Utc::now()));
         let _updated_job = job_to_update.update(&self.db).await?;
         Ok(())
