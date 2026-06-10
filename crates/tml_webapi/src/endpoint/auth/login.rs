@@ -83,6 +83,16 @@ pub async fn handle(
                         );
                     }
                 }
+                login::Error::UserDisabled => {
+                    return (
+                        StatusCode::OK,
+                        Json(ResponseBody {
+                            success: false,
+                            message: Some("User disabled".into()),
+                            token: None,
+                        }),
+                    );
+                }
                 _ => (),
             }
             (

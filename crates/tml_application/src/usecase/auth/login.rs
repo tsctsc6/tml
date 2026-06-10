@@ -37,6 +37,8 @@ pub enum Error {
     RepositoryError(#[from] repository::Error),
     #[error("Password Hasher error: {0}")]
     PasswordHasherError(#[from] app_trait::password_hasher::Error),
+    #[error("User disabled")]
+    UserDisabled,
 }
 
 pub async fn handle(
@@ -46,6 +48,9 @@ pub async fn handle(
     repository: &impl repository::Trait,
 ) -> Result<Response, Error> {
     let (user, roles) = repository.find_user_by_username(request.username).await?;
+    if !user.enabled {
+        return Err(Error::UserDisabled);
+    }
     password_hasher.verify_password(request.password, &user.password_hash)?;
     let claims = app_trait::jwt_manager::Claims {
         sub: user.id,
