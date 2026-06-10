@@ -140,7 +140,7 @@ impl Repository {
         let storage = crate::entity::mgmt::storage::Entity::find_by_id(storage_id)
             .one(&self.db)
             .await?
-            .ok_or(RepositoryError::JobNotFound)?;
+            .ok_or(RepositoryError::StorageNotFound)?;
         Ok(storage.path)
     }
 
