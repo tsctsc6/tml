@@ -29,7 +29,6 @@ impl JobHandler {
 
     async fn handle_inner(
         &self,
-        job_id: i64,
         job_type: tml_domain::model::mgmt::job::JobType,
         job_args: &serde_json::Value,
     ) -> Result<(), Error> {
@@ -44,8 +43,6 @@ impl JobHandler {
             tml_domain::model::mgmt::job::JobType::BuildIndex => (),
             tml_domain::model::mgmt::job::JobType::UpdateIndex => (),
         };
-        self.repository.finish_job(job_id).await?;
-        tracing::info!("job {} done", job_id);
         Ok(())
     }
 
@@ -71,10 +68,26 @@ impl tml_application::app_trait::job_handler::Trait for JobHandler {
         job_type: tml_domain::model::mgmt::job::JobType,
         job_args: serde_json::Value,
     ) {
-        match self.handle_inner(job_id, job_type, &job_args).await {
-            Ok(_) => {}
+        match self.handle_inner(job_type, &job_args).await {
+            Ok(_) => {
+                match self.repository.finish_job(job_id, true).await {
+                    Ok(_) => {}
+                    Err(e) => {
+                        tracing::error!("{}", e);
+                        return;
+                    }
+                };
+                tracing::info!("job {} done", job_id);
+            }
             Err(e) => {
                 tracing::error!("{}", e);
+                match self.repository.finish_job(job_id, false).await {
+                    Ok(_) => {}
+                    Err(_) => {
+                        tracing::error!("{}", e);
+                        return;
+                    }
+                };
             }
         }
     }
@@ -100,13 +113,14 @@ impl Repository {
         Repository { db }
     }
 
-    async fn finish_job(&self, job_id: i64) -> Result<(), RepositoryError> {
+    async fn finish_job(&self, job_id: i64, success: bool) -> Result<(), RepositoryError> {
         let job_to_update = crate::entity::mgmt::job::Entity::find_by_id(job_id)
             .one(&self.db)
             .await?
             .ok_or(RepositoryError::JobNotFound)?;
         let mut job_to_update: job::ActiveModel = job_to_update.into();
         job_to_update.status = Set(job::JobStatus::Completed);
+        job_to_update.success = Set(success);
         job_to_update.completed_at = Set(Some(chrono::Utc::now()));
         let _updated_job = job_to_update.update(&self.db).await?;
         Ok(())
