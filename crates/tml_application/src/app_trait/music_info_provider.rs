@@ -1,3 +1,6 @@
+use serde::Serialize;
+
+#[derive(Serialize)]
 pub struct MusicInfo {
     pub title: String,
     pub artists: Vec<String>,
@@ -7,8 +10,9 @@ pub struct MusicInfo {
     pub sample_rate: i32,
     pub channels: i16,
     pub bit_depth: i16,
+    pub file_path: String,
 }
 
 pub trait Trait: Send + Sync + Clone + 'static {
-    fn scan(&self, path: &str) -> impl Iterator<Item = MusicInfo>;
+    fn scan(&self, path: &str) -> impl Iterator<Item = (Vec<u8>, MusicInfo)> + Send;
 }

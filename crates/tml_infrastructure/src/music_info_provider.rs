@@ -29,6 +29,8 @@ pub enum Error {
     TryFromIntError(#[from] std::num::TryFromIntError),
     #[error("Json error: {0}")]
     JsonError(#[from] serde_json::error::Error),
+    #[error("Strip prefix error: {0}")]
+    StripPrefixError(#[from] std::path::StripPrefixError),
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -48,12 +50,13 @@ pub enum TagError {
 impl MusicInfoProvider {
     fn map_to_music_info(
         &self,
+        base_path: &str,
         entry: Result<walkdir::DirEntry, walkdir::Error>,
     ) -> Option<(
         Vec<u8>,
         tml_application::app_trait::music_info_provider::MusicInfo,
     )> {
-        match self.map_to_music_info_result(entry) {
+        match self.map_to_music_info_result(base_path, entry) {
             Ok(m) => {
                 return Some(m);
             }
@@ -66,6 +69,7 @@ impl MusicInfoProvider {
 
     fn map_to_music_info_result(
         &self,
+        base_path: &str,
         entry: Result<walkdir::DirEntry, walkdir::Error>,
     ) -> Result<
         (
@@ -75,13 +79,16 @@ impl MusicInfoProvider {
         Error,
     > {
         let entry = entry?;
-        if entry.path().is_dir() {
+        let path = entry.path();
+        if path.is_dir() {
             return Err(Error::Skiped);
         }
-        let extension = entry.path().extension().and_then(OsStr::to_str);
+        let extension = path.extension().and_then(OsStr::to_str);
         if extension != Some("flac") && extension != Some("mp3") {
             return Err(Error::Skiped);
         }
+        let relative_path = path.strip_prefix(base_path).unwrap().to_string_lossy();
+
         tracing::trace!("Path: {}", entry.path().display());
         let tagged_file = Probe::open(entry.path())?.guess_file_type()?.read()?;
         let tag = tagged_file.primary_tag().ok_or(TagError::GetTag)?;
@@ -123,6 +130,7 @@ impl MusicInfoProvider {
             sample_rate: i32::try_from(sample_rate)?,
             channels: channels.into(),
             bit_depth: bit_depth.into(),
+            file_path: relative_path.into(),
         };
         // order the keies
         let json_value = serde_json::to_value(&music_info)?;
@@ -148,6 +156,6 @@ impl tml_application::app_trait::music_info_provider::Trait for MusicInfoProvide
     > + Send {
         return WalkDir::new(path)
             .into_iter()
-            .filter_map(|x| self.map_to_music_info(x));
+            .filter_map(|x| self.map_to_music_info(path, x));
     }
 }

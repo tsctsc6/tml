@@ -3701,6 +3701,7 @@ dependencies = [
  "thiserror",
  "tml_domain",
  "tokio",
+ "tracing",
  "uuid",
 ]
 

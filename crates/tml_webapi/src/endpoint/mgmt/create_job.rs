@@ -62,8 +62,11 @@ pub async fn handle(
             description: &description,
             created_by_id: claims.inner.sub,
         },
-        &tml_infrastructure::usecase::mgmt::create_job::Repository::new(state.db),
-        &state.music_info_provider,
+        &tml_infrastructure::usecase::mgmt::create_job::Repository::new(state.db.clone()),
+        &tml_infrastructure::job_handler::JobHandler::new(
+            tml_infrastructure::job_handler::Repository::new(state.db),
+            state.music_info_provider,
+        ),
     )
     .await
     {

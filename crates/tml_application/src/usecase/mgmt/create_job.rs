@@ -58,7 +58,7 @@ pub enum Error {
 pub async fn handle(
     request: Request<'_>,
     repository: &impl repository::Trait,
-    music_info_provider: &impl crate::app_trait::music_info_provider::Trait,
+    job_handler: &impl crate::app_trait::job_handler::Trait,
 ) -> Result<Response, Error> {
     validation::validate(&request)?;
     let new_job = repository
@@ -69,25 +69,9 @@ pub async fn handle(
             request.created_by_id,
         )
         .await?;
-    let repository2 = repository.clone();
-    let music_info_provider2 = music_info_provider.clone();
-    let _x = match new_job.job_type {
-        job::JobType::Undefined => tokio::spawn(async {}),
-        job::JobType::ScanIncremental => tokio::spawn(async move {
-            handle_scan_incremental_job("", repository2, music_info_provider2).await;
-        }),
-        job::JobType::BuildIndex => tokio::spawn(async {}),
-        job::JobType::UpdateIndex => tokio::spawn(async {}),
-    };
+    let job_handler2 = job_handler.clone();
+    let job_type = request.job_type.clone();
+    let job_args = request.job_args.clone();
+    tokio::spawn(async move { job_handler2.handle(new_job.id, job_type, job_args).await });
     Ok(Response { id: new_job.id })
-}
-
-async fn handle_scan_incremental_job(
-    path: &str,
-    repository: impl repository::Trait,
-    music_info_provider: impl crate::app_trait::music_info_provider::Trait,
-) -> () {
-    //let itor = music_info_provider.scan(path);
-    //let x = music_info_provider.clone();
-    //let _res = tokio::task::spawn_blocking(|| handle_job(x)).await.unwrap();
 }
