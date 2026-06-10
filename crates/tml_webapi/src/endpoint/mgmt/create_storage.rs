@@ -64,10 +64,18 @@ pub async fn handle(
                             Json(ResponseBody::failed(Some("The name is too long".into()))),
                         );
                     }
-                    create_storage::validation::Error::InvalidPath => {
+                    create_storage::validation::Error::DirectoryNotExist => {
                         return (
                             StatusCode::OK,
-                            Json(ResponseBody::failed(Some("The path is invalid".into()))),
+                            Json(ResponseBody::failed(Some(
+                                "The directory does not exist or is a file.".into(),
+                            ))),
+                        );
+                    }
+                    create_storage::validation::Error::PathIsRelative => {
+                        return (
+                            StatusCode::OK,
+                            Json(ResponseBody::failed(Some("The path is relative".into()))),
                         );
                     }
                 },
