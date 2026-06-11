@@ -28,12 +28,8 @@ pub struct Request {
 pub struct JobItem {
     pub id: i64,
     pub job_type: tml_domain::model::mgmt::job::JobType,
-    pub job_args: serde_json::Value,
     pub status: tml_domain::model::mgmt::job::JobStatus,
-    pub description: String,
-    pub error_message: String,
     pub success: bool,
-    pub created_by_id: i64,
     pub created_at: chrono::DateTime<chrono::Utc>,
     pub completed_at: Option<chrono::DateTime<chrono::Utc>>,
 }
@@ -72,7 +68,7 @@ pub async fn handle(
         created_before
     };
 
-    if created_after >= created_before  {
+    if created_after >= created_before {
         return Err(Error::DateTimeOutOfRange);
     }
 
@@ -85,12 +81,8 @@ pub async fn handle(
         .map(|m| JobItem {
             id: m.id,
             job_type: m.job_type,
-            job_args: m.job_args,
             status: m.status,
-            description: m.description,
-            error_message: m.error_message,
             success: m.success,
-            created_by_id: m.created_by_id,
             created_at: m.created_at,
             completed_at: m.completed_at,
         })
