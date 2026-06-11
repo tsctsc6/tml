@@ -37,7 +37,7 @@ impl tml_application::app_trait::jwt_manager::Trait for JwtManager {
     ) -> Result<String, tml_application::app_trait::jwt_manager::Error> {
         let timestamp = SystemTime::now()
             .duration_since(UNIX_EPOCH)
-            .unwrap()
+            .map_err(|e| tml_application::app_trait::jwt_manager::Error::JwtError(e.to_string()))?
             .as_millis()
             + Duration::from_secs(self.config.exp_in_seconds).as_millis();
         claims.exp = timestamp;

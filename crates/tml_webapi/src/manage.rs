@@ -15,8 +15,7 @@ pub enum Error {
 pub async fn init_admin(username: &str, app_state: AppState) -> Result<(), Error> {
     let new_password = inquire::Password::new("Password:")
         .with_display_mode(inquire::PasswordDisplayMode::Masked)
-        .prompt()
-        .unwrap();
+        .prompt()?;
     init_admin::handle(
         init_admin::Request {
             username,
@@ -32,8 +31,7 @@ pub async fn init_admin(username: &str, app_state: AppState) -> Result<(), Error
 pub async fn reset_password(username: &str, app_state: AppState) -> Result<(), Error> {
     let new_password = inquire::Password::new("Password:")
         .with_display_mode(inquire::PasswordDisplayMode::Masked)
-        .prompt()
-        .unwrap();
+        .prompt()?;
     reset_password::handle(
         reset_password::Request {
             username,

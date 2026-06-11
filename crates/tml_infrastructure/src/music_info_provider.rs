@@ -87,6 +87,7 @@ impl MusicInfoProvider {
         if extension != Some("flac") && extension != Some("mp3") {
             return Err(Error::Skiped);
         }
+        // base_path is the argument of WalkDir::new(path), so it shoud not failed.
         let relative_path = path.strip_prefix(base_path).unwrap().to_string_lossy();
 
         tracing::trace!("Path: {}", entry.path().display());
@@ -134,6 +135,7 @@ impl MusicInfoProvider {
         };
         // order the keies
         let json_value = serde_json::to_value(&music_info)?;
+        // json_value is form last line, so it shoud not failed.
         let sorted_map: BTreeMap<String, serde_json::Value> =
             serde_json::from_value(json_value).unwrap();
         let json = serde_json::to_string(&sorted_map)?;

@@ -1,5 +1,5 @@
 use crate::entity::mgmt::job;
-use sea_orm::{EntityTrait, QueryOrder};
+use sea_orm::EntityTrait;
 use tml_application::usecase::mgmt::read_all_job;
 
 #[derive(Clone)]
