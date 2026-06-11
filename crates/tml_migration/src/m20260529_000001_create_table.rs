@@ -180,6 +180,8 @@ impl MigrationTrait for Migration {
                     .to_owned(),
             )
             .await?;
+        db.execute_unprepared("ALTER INDEX app.music_info_pkey SET (fillfactor = 80);")
+            .await?;
         manager
             .create_index(
                 Index::create()

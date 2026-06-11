@@ -1,5 +1,8 @@
 use crate::entity::{app::music_info, mgmt::job};
-use sea_orm::{ActiveModelTrait as _, ActiveValue::Set, DbErr, EntityTrait, sea_query::OnConflict};
+use sea_orm::{
+    ActiveModelTrait as _, ActiveValue::Set, ConnectionTrait, DbErr, EntityTrait,
+    sea_query::OnConflict,
+};
 use tml_application::app_trait::music_info_provider::Trait as _;
 
 #[derive(Clone)]
@@ -56,6 +59,9 @@ impl JobHandler {
                 .create_or_update_music_info(storage_id, chunk)
                 .await?;
         }
+        self.repository
+            .reindex_concurrently("app.music_info_pkey")
+            .await?;
         Ok(())
     }
 }
@@ -173,6 +179,16 @@ impl Repository {
         let _reslut = music_info::Entity::insert_many(music_info_collection)
             .on_conflict(on_conflict)
             .exec(&self.db)
+            .await?;
+        Ok(())
+    }
+
+    async fn reindex_concurrently(&self, index: &str) -> Result<(), RepositoryError> {
+        self.db
+            .execute_raw(sea_orm::Statement::from_string(
+                self.db.get_database_backend(),
+                format!("REINDEX INDEX CONCURRENTLY {}", index),
+            ))
             .await?;
         Ok(())
     }
