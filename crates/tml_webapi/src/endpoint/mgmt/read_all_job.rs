@@ -18,12 +18,8 @@ pub struct QueryParams {
 pub struct Item {
     pub id: i64,
     pub job_type: String,
-    pub job_args: serde_json::Value,
     pub status: String,
-    pub description: String,
-    pub error_message: String,
     pub success: bool,
-    pub created_by_id: i64,
     pub created_at: String,
     pub completed_at: Option<String>,
 }
@@ -141,12 +137,8 @@ pub async fn handle(
                             .map(|item| Item {
                                 id: item.id,
                                 job_type: format!("{:?}", item.job_type),
-                                job_args: item.job_args,
                                 status: format!("{:?}", item.status),
-                                description: item.description,
-                                error_message: item.error_message,
                                 success: item.success,
-                                created_by_id: item.created_by_id,
                                 created_at: format_iso8601(&item.created_at),
                                 completed_at: format_opt_iso8601(&item.completed_at),
                             })
