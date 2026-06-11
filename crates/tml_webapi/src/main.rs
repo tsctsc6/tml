@@ -104,6 +104,7 @@ async fn start(app_state: AppState) -> ExitCode {
             "/update_storage",
             post(endpoint::mgmt::update_storage::handle),
         )
+        .route("/delete_job", post(endpoint::mgmt::delete_job::handle))
         .route(
             "/delete_storage",
             post(endpoint::mgmt::delete_storage::handle),
