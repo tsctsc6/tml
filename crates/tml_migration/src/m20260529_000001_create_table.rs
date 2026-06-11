@@ -131,6 +131,15 @@ impl MigrationTrait for Migration {
             )
             .await?;
         manager
+            .create_index(
+                Index::create()
+                    .table(("mgmt", "job"))
+                    .name("idx-job-created_at")
+                    .col("created_at")
+                    .to_owned(),
+            )
+            .await?;
+        manager
             .create_table(
                 Table::create()
                     .table(("mgmt", "storage"))
