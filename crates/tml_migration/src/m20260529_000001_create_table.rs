@@ -254,7 +254,7 @@ impl MigrationTrait for Migration {
                             .on_delete(ForeignKeyAction::Cascade)
                             .on_update(ForeignKeyAction::Cascade),
                     )
-                    .col(string("order").not_null())
+                    .col(binary("order").not_null())
                     .to_owned(),
             )
             .await?;

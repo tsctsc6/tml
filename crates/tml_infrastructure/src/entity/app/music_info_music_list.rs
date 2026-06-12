@@ -12,7 +12,7 @@ pub struct Model {
     pub music_info: Option<super::music_info::Entity>,
     #[sea_orm(belongs_to, from = "music_list_id", to = "id")]
     pub music_list: Option<super::music_list::Entity>,
-    pub order: String,
+    pub order: Vec<u8>,
 }
 
 impl ActiveModelBehavior for ActiveModel {}
