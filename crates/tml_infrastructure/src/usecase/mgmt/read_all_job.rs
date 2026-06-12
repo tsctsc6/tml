@@ -1,5 +1,5 @@
 use crate::entity::mgmt::job;
-use sea_orm::EntityTrait;
+use sea_orm::{ColumnTrait, EntityTrait, QueryFilter as _};
 use tml_application::usecase::mgmt::read_all_job;
 
 #[derive(Clone)]
@@ -18,16 +18,17 @@ impl read_all_job::repository::Trait for Repository {
     async fn read_all_job(
         &self,
         page_size: u64,
+        cursor: i64,
         created_after: chrono::DateTime<chrono::Utc>,
         created_before: chrono::DateTime<chrono::Utc>,
     ) -> Result<Vec<tml_domain::model::mgmt::job::Model>, read_all_job::repository::Error> {
         tracing::debug!("{}, {}, {}", page_size, created_after, created_before);
         let result = job::Entity::find()
-            .cursor_by(job::Column::CreatedAt)
+            .filter(job::Column::CreatedAt.between(created_after, created_before))
+            .cursor_by(job::Column::Id)
             .desc()
             // because of desc, before and after swap
-            .after(created_before)
-            .before(created_after)
+            .after(cursor)
             .first(page_size)
             .all(&self.db)
             .await

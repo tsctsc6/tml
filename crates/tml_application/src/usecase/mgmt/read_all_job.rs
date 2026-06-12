@@ -12,6 +12,7 @@ pub mod repository {
         async fn read_all_job(
             &self,
             page_size: u64,
+            cursor: i64,
             created_after: chrono::DateTime<chrono::Utc>,
             created_before: chrono::DateTime<chrono::Utc>,
         ) -> Result<Vec<job::Model>, Error>;
@@ -19,7 +20,7 @@ pub mod repository {
 }
 
 pub struct Request {
-    pub cursor: Option<chrono::DateTime<chrono::Utc>>,
+    pub cursor: Option<i64>,
     pub page_size: u64,
     pub created_after: Option<chrono::DateTime<chrono::Utc>>,
     pub created_before: Option<chrono::DateTime<chrono::Utc>>,
@@ -36,7 +37,7 @@ pub struct JobItem {
 
 pub struct Response {
     pub items: Vec<JobItem>,
-    pub next_cursor: Option<chrono::DateTime<chrono::Utc>>,
+    pub next_cursor: Option<i64>,
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -56,24 +57,16 @@ pub async fn handle(
     if request.page_size == 0 || request.page_size > 1000 {
         return Err(Error::PageSizeOutOfRange);
     }
+    let cursor = request.cursor.unwrap_or(i64::MAX);
     let created_before = request.created_before.unwrap_or(crate::SAFE_MAX_DATETIME);
     let created_after = request.created_after.unwrap_or(crate::SAFE_MIN_DATETIME);
-    let created_before = if let Some(cursor) = request.cursor {
-        if cursor < created_before {
-            cursor
-        } else {
-            created_before
-        }
-    } else {
-        created_before
-    };
 
     if created_after >= created_before {
         return Err(Error::DateTimeOutOfRange);
     }
 
     let result = repository
-        .read_all_job(request.page_size, created_after, created_before)
+        .read_all_job(request.page_size, cursor, created_after, created_before)
         .await?;
 
     let items: Vec<JobItem> = result
@@ -87,7 +80,7 @@ pub async fn handle(
             completed_at: m.completed_at,
         })
         .collect();
-    let next_cursor = items.last().map(|x| x.created_at);
+    let next_cursor = items.last().map(|x| x.id);
 
     Ok(Response { items, next_cursor })
 }

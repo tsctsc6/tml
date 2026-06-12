@@ -6,7 +6,7 @@ use crate::{app_state::AppState, extractor::Claims};
 
 #[derive(Deserialize, Debug)]
 pub struct QueryParams {
-    pub cursor: Option<String>,
+    pub cursor: Option<i64>,
     pub page_size: Option<u64>,
     /// ISO 8601 format, target_time >= created_after
     pub created_after: Option<String>,
@@ -27,7 +27,7 @@ pub struct Item {
 #[derive(Serialize)]
 pub struct Data {
     pub items: Vec<Item>,
-    pub next_cursor: Option<String>,
+    pub next_cursor: Option<i64>,
 }
 
 #[derive(Serialize)]
@@ -82,16 +82,6 @@ pub async fn handle(
 
     let page_size = query.page_size.unwrap_or(10);
 
-    let cursor = match query.cursor.as_deref() {
-        Some(s) => match parse_iso8601(s) {
-            Ok(dt) => Some(dt),
-            Err(e) => {
-                return (StatusCode::OK, Json(ResponseBody::failed(Some(e))));
-            }
-        },
-        None => None,
-    };
-
     let created_after = match query.created_after.as_deref() {
         Some(s) => match parse_iso8601(s) {
             Ok(dt) => Some(dt),
@@ -114,7 +104,7 @@ pub async fn handle(
 
     match read_all_job::handle(
         read_all_job::Request {
-            cursor,
+            cursor: query.cursor,
             page_size,
             created_after,
             created_before,
@@ -123,31 +113,28 @@ pub async fn handle(
     )
     .await
     {
-        Ok(response) => {
-            let next_cursor = response.next_cursor.map(|dt| format_iso8601(&dt));
-            (
-                StatusCode::OK,
-                Json(ResponseBody {
-                    success: true,
-                    message: None,
-                    data: Some(Data {
-                        items: response
-                            .items
-                            .into_iter()
-                            .map(|item| Item {
-                                id: item.id,
-                                job_type: format!("{:?}", item.job_type),
-                                status: format!("{:?}", item.status),
-                                success: item.success,
-                                created_at: format_iso8601(&item.created_at),
-                                completed_at: format_opt_iso8601(&item.completed_at),
-                            })
-                            .collect(),
-                        next_cursor,
-                    }),
+        Ok(response) => (
+            StatusCode::OK,
+            Json(ResponseBody {
+                success: true,
+                message: None,
+                data: Some(Data {
+                    items: response
+                        .items
+                        .into_iter()
+                        .map(|item| Item {
+                            id: item.id,
+                            job_type: format!("{:?}", item.job_type),
+                            status: format!("{:?}", item.status),
+                            success: item.success,
+                            created_at: format_iso8601(&item.created_at),
+                            completed_at: format_opt_iso8601(&item.completed_at),
+                        })
+                        .collect(),
+                    next_cursor: response.next_cursor,
                 }),
-            )
-        }
+            }),
+        ),
         Err(e) => {
             tracing::error!("Error occurred: {}", e);
             match e {
