@@ -46,3 +46,4 @@ lofty = "0.24.0"
 walkdir = "2.5.0"
 xxhash-rust = { version = "0.8.15", features = ["xxh3"] }
 fractional_index = "2.0.2"
+hex = "0.4.3"

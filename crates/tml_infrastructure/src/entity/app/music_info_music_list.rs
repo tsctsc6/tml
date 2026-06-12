@@ -5,7 +5,7 @@ use sea_orm::entity::prelude::*;
 #[sea_orm(schema_name = "app", table_name = "music_info_music_list")]
 pub struct Model {
     #[sea_orm(primary_key, auto_increment = false)]
-    pub music_info_id: i64,
+    pub music_info_id: Vec<u8>,
     #[sea_orm(primary_key, auto_increment = false)]
     pub music_list_id: i64,
     #[sea_orm(belongs_to, from = "music_info_id", to = "id")]

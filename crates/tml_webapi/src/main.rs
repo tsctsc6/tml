@@ -117,6 +117,10 @@ async fn start(app_state: AppState) -> ExitCode {
         .route("/read_job", get(endpoint::mgmt::read_job::handle));
     let app_routes = axum::Router::new()
         .route(
+            "/add_music_info_to_music_list",
+            post(endpoint::app::add_music_info_to_music_list::handle),
+        )
+        .route(
             "/create_music_list",
             post(endpoint::app::create_music_list::handle),
         )
