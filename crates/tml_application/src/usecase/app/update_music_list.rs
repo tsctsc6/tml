@@ -7,20 +7,14 @@ pub mod repository {
         NameDuplication,
         #[error("Music list not found")]
         MusicListNotFound,
-        #[error("Permission denied")]
-        PermissionDenied,
         #[error("Unknown error: {0}")]
         Unknown(String),
     }
 
     #[async_trait::async_trait]
     pub trait Trait: Send + Sync + Clone + 'static {
-        async fn update_music_list(
-            &self,
-            id: i64,
-            name: &str,
-            user_id: i64,
-        ) -> Result<music_list::Model, Error>;
+        async fn update_music_list(&self, id: i64, name: &str) -> Result<music_list::Model, Error>;
+        async fn get_music_list_owner_id(&self, music_list_id: i64) -> Result<i64, Error>;
     }
 }
 
@@ -56,6 +50,8 @@ pub enum Error {
     ValidationError(#[from] validation::Error),
     #[error("Repository error: {0}")]
     RepositoryError(#[from] repository::Error),
+    #[error("Permission denied")]
+    PermissionDenied,
 }
 
 pub async fn handle(
@@ -63,8 +59,12 @@ pub async fn handle(
     repository: &impl repository::Trait,
 ) -> Result<(), Error> {
     validation::validate(&request)?;
+    let owner_id = repository.get_music_list_owner_id(request.id).await?;
+    if request.user_id != owner_id {
+        return Err(Error::PermissionDenied);
+    }
     let _updated_music_list = repository
-        .update_music_list(request.id, request.name, request.user_id)
+        .update_music_list(request.id, request.name)
         .await?;
     Ok(())
 }

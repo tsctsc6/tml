@@ -43,7 +43,9 @@ pub async fn handle(
         Err(_) => {
             return (
                 StatusCode::OK,
-                Json(ResponseBody::failed(Some("Invalid music_info_id hex".into()))),
+                Json(ResponseBody::failed(Some(
+                    "Invalid music_info_id hex".into(),
+                ))),
             );
         }
     };
@@ -85,12 +87,6 @@ pub async fn handle(
                             ))),
                         );
                     }
-                    add_music_info_to_music_list::repository::Error::PermissionDenied => {
-                        return (
-                            StatusCode::FORBIDDEN,
-                            Json(ResponseBody::failed(Some("Permission denied".into()))),
-                        );
-                    }
                     add_music_info_to_music_list::repository::Error::MusicInfoAlreadyInMusicList => {
                         return (
                             StatusCode::OK,
@@ -106,6 +102,12 @@ pub async fn handle(
                         );
                     }
                 },
+                add_music_info_to_music_list::Error::PermissionDenied =>{
+                        return (
+                            StatusCode::FORBIDDEN,
+                            Json(ResponseBody::failed(Some("Permission denied".into()))),
+                        );
+                    },
             }
         }
     }

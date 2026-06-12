@@ -62,12 +62,6 @@ pub async fn handle(
                             ))),
                         );
                     }
-                    delete_music_list::repository::Error::PermissionDenied => {
-                        return (
-                            StatusCode::FORBIDDEN,
-                            Json(ResponseBody::failed(Some("Permission denied".into()))),
-                        );
-                    }
                     delete_music_list::repository::Error::Unknown(_) => {
                         return (
                             StatusCode::INTERNAL_SERVER_ERROR,
@@ -75,6 +69,12 @@ pub async fn handle(
                         );
                     }
                 },
+                delete_music_list::Error::PermissionDenied => {
+                    return (
+                        StatusCode::FORBIDDEN,
+                        Json(ResponseBody::failed(Some("Permission denied".into()))),
+                    );
+                }
             }
         }
     }

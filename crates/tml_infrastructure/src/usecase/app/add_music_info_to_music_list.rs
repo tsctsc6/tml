@@ -23,22 +23,10 @@ impl add_music_info_to_music_list::repository::Trait for Repository {
         &self,
         music_list_id: i64,
         music_info_id: &[u8],
-        user_id: i64,
     ) -> Result<
         tml_domain::model::app::music_info_music_list::Model,
         add_music_info_to_music_list::repository::Error,
     > {
-        let music_list = music_list::Entity::find_by_id(music_list_id)
-            .one(&self.db)
-            .await
-            .map_err(|e| -> add_music_info_to_music_list::repository::Error {
-                add_music_info_to_music_list::repository::Error::Unknown(e.to_string())
-            })?
-            .ok_or(add_music_info_to_music_list::repository::Error::MusicListNotFound)?;
-        if music_list.user_id != user_id {
-            return Err(add_music_info_to_music_list::repository::Error::PermissionDenied);
-        }
-
         // 1. Get the last order value for this music_list
         let last_entry = music_info_music_list::Entity::find()
             .filter(music_info_music_list::Column::MusicListId.eq(music_list_id))
@@ -104,5 +92,19 @@ impl add_music_info_to_music_list::repository::Trait for Repository {
             music_info_id: inserted.music_info_id,
             order: inserted.order,
         })
+    }
+
+    async fn get_music_list_owner_id(
+        &self,
+        music_list_id: i64,
+    ) -> Result<i64, add_music_info_to_music_list::repository::Error> {
+        let music_list = music_list::Entity::find_by_id(music_list_id)
+            .one(&self.db)
+            .await
+            .map_err(|e| -> add_music_info_to_music_list::repository::Error {
+                add_music_info_to_music_list::repository::Error::Unknown(e.to_string())
+            })?
+            .ok_or(add_music_info_to_music_list::repository::Error::MusicListNotFound)?;
+        Ok(music_list.user_id)
     }
 }
