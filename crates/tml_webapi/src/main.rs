@@ -115,9 +115,23 @@ async fn start(app_state: AppState) -> ExitCode {
         )
         .route("/read_all_job", get(endpoint::mgmt::read_all_job::handle))
         .route("/read_job", get(endpoint::mgmt::read_job::handle));
+    let app_routes = axum::Router::new()
+        .route(
+            "/create_music_list",
+            post(endpoint::app::create_music_list::handle),
+        )
+        .route(
+            "/update_music_list",
+            post(endpoint::app::update_music_list::handle),
+        )
+        .route(
+            "/delete_music_list",
+            post(endpoint::app::delete_music_list::handle),
+        );
     let app = axum::Router::new()
         .nest("/api/mgmt", mgmt_routes)
         .nest("/api/user", user_routes)
+        .nest("/api/app", app_routes)
         .with_state(app_state);
     match axum::serve(listener, app).await {
         Ok(_) => {}
