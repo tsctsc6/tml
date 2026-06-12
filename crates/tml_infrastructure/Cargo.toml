@@ -21,3 +21,4 @@ tracing = { workspace = true }
 lofty = { workspace = true }
 walkdir = { workspace = true }
 xxhash-rust = { workspace = true }
+fractional_index = { workspace = true }
