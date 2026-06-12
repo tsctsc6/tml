@@ -127,6 +127,10 @@ async fn start(app_state: AppState) -> ExitCode {
         .route(
             "/delete_music_list",
             post(endpoint::app::delete_music_list::handle),
+        )
+        .route(
+            "/read_all_music_list",
+            get(endpoint::app::read_all_music_list::handle),
         );
     let app = axum::Router::new()
         .nest("/api/mgmt", mgmt_routes)

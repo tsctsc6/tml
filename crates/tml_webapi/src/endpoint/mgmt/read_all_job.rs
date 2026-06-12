@@ -80,8 +80,6 @@ pub async fn handle(
         return (StatusCode::FORBIDDEN, Json(ResponseBody::failed(None)));
     }
 
-    let page_size = query.page_size.unwrap_or(10);
-
     let created_after = match query.created_after.as_deref() {
         Some(s) => match parse_iso8601(s) {
             Ok(dt) => Some(dt),
@@ -105,7 +103,7 @@ pub async fn handle(
     match read_all_job::handle(
         read_all_job::Request {
             cursor: query.cursor,
-            page_size,
+            page_size: query.page_size,
             created_after,
             created_before,
         },

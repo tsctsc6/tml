@@ -21,7 +21,7 @@ pub mod repository {
 
 pub struct Request {
     pub cursor: Option<i64>,
-    pub page_size: u64,
+    pub page_size: Option<u64>,
     pub created_after: Option<chrono::DateTime<chrono::Utc>>,
     pub created_before: Option<chrono::DateTime<chrono::Utc>>,
 }
@@ -54,7 +54,8 @@ pub async fn handle(
     request: Request,
     repository: &impl repository::Trait,
 ) -> Result<Response, Error> {
-    if request.page_size == 0 || request.page_size > 1000 {
+    let page_size = request.page_size.unwrap_or(10);
+    if page_size == 0 || page_size > 1000 {
         return Err(Error::PageSizeOutOfRange);
     }
     let cursor = request.cursor.unwrap_or(i64::MAX);
@@ -66,7 +67,7 @@ pub async fn handle(
     }
 
     let result = repository
-        .read_all_job(request.page_size, cursor, created_after, created_before)
+        .read_all_job(page_size, cursor, created_after, created_before)
         .await?;
 
     let items: Vec<JobItem> = result
