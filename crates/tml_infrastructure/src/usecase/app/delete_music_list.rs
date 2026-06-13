@@ -16,12 +16,15 @@ impl Repository {
 #[async_trait::async_trait]
 impl delete_music_list::repository::Trait for Repository {
     async fn delete_music_list(&self, id: i64) -> Result<(), delete_music_list::repository::Error> {
-        music_list::Entity::delete_by_id(id)
+        let result = music_list::Entity::delete_by_id(id)
             .exec(&self.db)
             .await
             .map_err(|e| -> delete_music_list::repository::Error {
                 delete_music_list::repository::Error::Unknown(e.to_string())
             })?;
+        if result.rows_affected == 0 {
+            Err(delete_music_list::repository::Error::MusicListNotFound)?;
+        }
         Ok(())
     }
 
