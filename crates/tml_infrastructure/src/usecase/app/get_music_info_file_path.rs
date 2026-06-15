@@ -32,8 +32,8 @@ impl get_music_info_file_path::repository::Trait for Repository {
             .ok_or(get_music_info_file_path::repository::Error::MusicInfoNotFound)?;
 
         let (music_info_model, storage_model) = result;
-        let storage = storage_model
-            .ok_or(get_music_info_file_path::repository::Error::StorageNotFound)?;
+        let storage =
+            storage_model.ok_or(get_music_info_file_path::repository::Error::StorageNotFound)?;
 
         let file_path = Path::new(&storage.path)
             .join(&music_info_model.file_path)

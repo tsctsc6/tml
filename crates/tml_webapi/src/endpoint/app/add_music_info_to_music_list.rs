@@ -102,17 +102,17 @@ pub async fn handle(
                         );
                     }
                 },
-                add_music_info_to_music_list::Error::PermissionDenied =>{
-                        return (
-                            StatusCode::FORBIDDEN,
-                            Json(ResponseBody::failed(Some("Permission denied".into()))),
-                        );
-                    },
+                add_music_info_to_music_list::Error::PermissionDenied => {
+                    return (
+                        StatusCode::FORBIDDEN,
+                        Json(ResponseBody::failed(Some("Permission denied".into()))),
+                    );
+                },
                 add_music_info_to_music_list::Error::DecodeError(_) => {
                     return (
-                                StatusCode::INTERNAL_SERVER_ERROR,
-                                Json(ResponseBody::failed(None)),
-                            )
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        Json(ResponseBody::failed(None)),
+                    )
                 },
             }
         }

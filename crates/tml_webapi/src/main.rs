@@ -145,6 +145,10 @@ async fn start(app_state: AppState) -> ExitCode {
             post(endpoint::app::remove_music_info_from_music_list::handle),
         )
         .route(
+            "/change_music_info_order_in_music_list",
+            post(endpoint::app::change_music_info_order_in_music_list::handle),
+        )
+        .route(
             "/get_music_stream",
             get(endpoint::app::get_music_stream::handle),
         );

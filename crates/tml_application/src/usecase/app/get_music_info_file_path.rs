@@ -11,10 +11,7 @@ pub mod repository {
 
     #[async_trait::async_trait]
     pub trait Trait: Send + Sync + Clone + 'static {
-        async fn get_music_info_file_path(
-            &self,
-            music_info_id: Vec<u8>,
-        ) -> Result<String, Error>;
+        async fn get_music_info_file_path(&self, music_info_id: Vec<u8>) -> Result<String, Error>;
     }
 }
 
