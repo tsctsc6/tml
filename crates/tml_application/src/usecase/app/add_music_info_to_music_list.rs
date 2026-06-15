@@ -59,6 +59,7 @@ pub async fn handle(
         return Err(Error::PermissionDenied);
     }
     let last_order = repository.get_last_order(request.music_list_id).await?;
+
     let new_order = if last_order.is_empty() {
         let default_index = FractionalIndex::default();
         default_index.as_bytes().to_vec()
@@ -70,6 +71,7 @@ pub async fn handle(
         let new_index = FractionalIndex::new_after(&last_index);
         new_index.as_bytes().to_vec()
     };
+
     let result = repository
         .add_music_info_to_music_list(request.music_list_id, request.music_info_id, &new_order)
         .await?;
