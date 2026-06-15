@@ -1,5 +1,4 @@
 use crate::entity::app::{music_info_music_list, music_list};
-use fractional_index::FractionalIndex;
 use sea_orm::{
     ActiveModelTrait, ActiveValue::Set, ColumnTrait, EntityTrait, Order, QueryFilter as _,
     QueryOrder as _, SqlErr,
@@ -19,42 +18,36 @@ impl Repository {
 
 #[async_trait::async_trait]
 impl add_music_info_to_music_list::repository::Trait for Repository {
-    async fn add_music_info_to_music_list(
+    async fn get_last_order(
         &self,
         music_list_id: i64,
-        music_info_id: &[u8],
-    ) -> Result<
-        tml_domain::model::app::music_info_music_list::Model,
-        add_music_info_to_music_list::repository::Error,
-    > {
-        // 1. Get the last order value for this music_list
+    ) -> Result<Vec<u8>, add_music_info_to_music_list::repository::Error> {
         let last_entry = music_info_music_list::Entity::find()
             .filter(music_info_music_list::Column::MusicListId.eq(music_list_id))
             .order_by(music_info_music_list::Column::Order, Order::Desc)
             .one(&self.db)
             .await
             .map_err(|e| add_music_info_to_music_list::repository::Error::Unknown(e.to_string()))?;
+        let last_order = last_entry.map(|x| x.order);
+        match last_order {
+            Some(o) => Ok(o),
+            None => Ok(vec![]),
+        }
+    }
 
-        // 2. Generate new order using fractional_index
-        let new_order: Vec<u8> = match last_entry {
-            Some(last) => {
-                let last_index = FractionalIndex::from_bytes(last.order.clone()).map_err(|e| {
-                    add_music_info_to_music_list::repository::Error::Unknown(e.to_string())
-                })?;
-                let new_index = FractionalIndex::new_after(&last_index);
-                new_index.as_bytes().to_vec()
-            }
-            None => {
-                let default_index = FractionalIndex::default();
-                default_index.as_bytes().to_vec()
-            }
-        };
-
-        // 3. Insert the new record — database constraints handle existence & uniqueness
+    async fn add_music_info_to_music_list(
+        &self,
+        music_list_id: i64,
+        music_info_id: &[u8],
+        order: &[u8],
+    ) -> Result<
+        tml_domain::model::app::music_info_music_list::Model,
+        add_music_info_to_music_list::repository::Error,
+    > {
         let new_entry = music_info_music_list::ActiveModel {
             music_info_id: Set(music_info_id.to_owned()),
             music_list_id: Set(music_list_id),
-            order: Set(new_order),
+            order: Set(order.to_owned()),
         };
         let inserted = match new_entry.insert(&self.db).await {
             Ok(record) => record,
