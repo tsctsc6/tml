@@ -30,7 +30,7 @@ impl create_music_list::repository::Trait for Repository {
             Ok(music_list) => music_list,
             Err(e) => match e.sql_err() {
                 Some(SqlErr::UniqueConstraintViolation(detail))
-                    if detail.contains("music_list_name_key") =>
+                    if detail.contains("idx-music_list-user_id-name") =>
                 {
                     return Err(create_music_list::repository::Error::NameDuplication);
                 }

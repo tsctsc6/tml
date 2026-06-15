@@ -197,7 +197,7 @@ impl MigrationTrait for Migration {
                     .table(("app", "music_list"))
                     .if_not_exists()
                     .col(big_pk_auto("id"))
-                    .col(string("name").unique_key())
+                    .col(string("name").not_null())
                     .col(big_integer("user_id").not_null())
                     .foreign_key(
                         ForeignKey::create()
@@ -216,8 +216,10 @@ impl MigrationTrait for Migration {
             .create_index(
                 Index::create()
                     .table(("app", "music_list"))
-                    .name("idx-music_list-user_id")
+                    .name("idx-music_list-user_id-name")
                     .col("user_id")
+                    .col("name")
+                    .unique()
                     .to_owned(),
             )
             .await?;

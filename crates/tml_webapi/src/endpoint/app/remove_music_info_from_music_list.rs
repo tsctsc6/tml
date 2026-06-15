@@ -1,6 +1,6 @@
 use axum::{Json, extract::State, http::StatusCode};
 use serde::Deserialize;
-use tml_application::usecase::app::add_music_info_to_music_list;
+use tml_application::usecase::app::remove_music_info_from_music_list;
 
 use crate::{app_state::AppState, extractor::Claims};
 
@@ -50,13 +50,15 @@ pub async fn handle(
         }
     };
 
-    match add_music_info_to_music_list::handle(
-        add_music_info_to_music_list::Request {
+    match remove_music_info_from_music_list::handle(
+        remove_music_info_from_music_list::Request {
             music_list_id: request_body.music_list_id,
             music_info_id: &music_info_id,
             user_id: claims.inner.sub,
         },
-        &tml_infrastructure::usecase::app::add_music_info_to_music_list::Repository::new(state.db),
+        &tml_infrastructure::usecase::app::remove_music_info_from_music_list::Repository::new(
+            state.db,
+        ),
     )
     .await
     {
@@ -70,8 +72,8 @@ pub async fn handle(
         Err(e) => {
             tracing::error!("Error occurred: {}", e);
             match e {
-                add_music_info_to_music_list::Error::RepositoryError(error) => match error {
-                    add_music_info_to_music_list::repository::Error::MusicListNotFound => {
+                remove_music_info_from_music_list::Error::RepositoryError(error) => match error {
+                    remove_music_info_from_music_list::repository::Error::MusicListNotFound => {
                         return (
                             StatusCode::OK,
                             Json(ResponseBody::failed(Some(
@@ -79,35 +81,27 @@ pub async fn handle(
                             ))),
                         );
                     }
-                    add_music_info_to_music_list::repository::Error::MusicInfoNotFound => {
+                    remove_music_info_from_music_list::repository::Error::MusicInfoNotInMusicList => {
                         return (
                             StatusCode::OK,
                             Json(ResponseBody::failed(Some(
-                                "The music info is not found".into(),
+                                "The music info is not in the music list".into(),
                             ))),
                         );
                     }
-                    add_music_info_to_music_list::repository::Error::MusicInfoAlreadyInMusicList => {
-                        return (
-                            StatusCode::OK,
-                            Json(ResponseBody::failed(Some(
-                                "The music info is already in the music list".into(),
-                            ))),
-                        );
-                    }
-                    add_music_info_to_music_list::repository::Error::Unknown(_) => {
+                    remove_music_info_from_music_list::repository::Error::Unknown(_) => {
                         return (
                             StatusCode::INTERNAL_SERVER_ERROR,
                             Json(ResponseBody::failed(None)),
                         );
                     }
                 },
-                add_music_info_to_music_list::Error::PermissionDenied =>{
-                        return (
-                            StatusCode::FORBIDDEN,
-                            Json(ResponseBody::failed(Some("Permission denied".into()))),
-                        );
-                    },
+                remove_music_info_from_music_list::Error::PermissionDenied => {
+                    return (
+                        StatusCode::FORBIDDEN,
+                        Json(ResponseBody::failed(Some("Permission denied".into()))),
+                    );
+                }
             }
         }
     }
