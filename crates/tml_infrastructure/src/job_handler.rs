@@ -1,10 +1,13 @@
 use crate::entity::{app::music_info, mgmt::job};
+use futures::stream::StreamExt as _;
 use meilisearch_sdk::client::Client;
 use sea_orm::{
     ActiveModelTrait as _, ActiveValue::Set, ConnectionTrait, DbErr, EntityTrait,
     sea_query::OnConflict,
 };
 use tml_application::app_trait::music_info_provider::Trait as _;
+use tokio::sync::mpsc;
+use tokio_stream::wrappers::UnboundedReceiverStream;
 
 #[derive(Clone)]
 pub struct JobHandler {
@@ -52,22 +55,6 @@ impl JobHandler {
         };
         Ok(())
     }
-
-    async fn handle_scan_incremental_job(&self, storage_id: i64) -> Result<(), Error> {
-        let path = self.repository.get_storage_path(storage_id).await?;
-        let iter = self.music_info_provider.scan(&path);
-        let mut iter = iter.peekable();
-        while iter.peek().is_some() {
-            let chunk = iter.by_ref().take(500);
-            self.repository
-                .create_or_update_music_info(storage_id, chunk)
-                .await?;
-        }
-        self.repository
-            .reindex_concurrently("app.music_info_pkey")
-            .await?;
-        Ok(())
-    }
 }
 
 #[async_trait::async_trait]
@@ -104,6 +91,50 @@ impl tml_application::app_trait::job_handler::Trait for JobHandler {
                 };
             }
         }
+    }
+}
+
+// scan_incremental
+impl JobHandler {
+    async fn handle_scan_incremental_job(&self, storage_id: i64) -> Result<(), Error> {
+        let path = self.repository.get_storage_path(storage_id).await?;
+        let mut music_info_chunk_stream = self.get_music_info_chunk_stream(path).await;
+        while let Some(chunk) = music_info_chunk_stream.next().await {
+            self.repository
+                .create_or_update_music_info(storage_id, chunk.into_iter())
+                .await?;
+        }
+        self.repository
+            .reindex_concurrently("app.music_info_pkey")
+            .await?;
+        Ok(())
+    }
+
+    /// Return chunk with 500 items
+    pub async fn get_music_info_chunk_stream(
+        &self,
+        path: String,
+    ) -> impl tokio_stream::Stream<
+        Item = Vec<(
+            Vec<u8>,
+            tml_application::app_trait::music_info_provider::MusicInfo,
+        )>,
+    > {
+        let (tx, rx) = mpsc::unbounded_channel();
+
+        let music_info_provider = self.music_info_provider.clone();
+
+        tokio::task::spawn_blocking(move || {
+            let iter = music_info_provider.scan(&path);
+
+            for item in iter {
+                if tx.send(item).is_err() {
+                    break;
+                }
+            }
+        });
+
+        UnboundedReceiverStream::new(rx).chunks(500)
     }
 }
 
