@@ -4442,6 +4442,7 @@ dependencies = [
  "async-trait",
  "chrono",
  "futures",
+ "hex",
  "jsonwebtoken",
  "lofty",
  "meilisearch-sdk",

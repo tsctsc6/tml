@@ -5,6 +5,7 @@ pub mod endpoint;
 pub mod extractor;
 pub mod logger;
 pub mod manage;
+pub mod meilisearch;
 
 use std::{process::ExitCode, sync::Arc, time::Duration};
 
@@ -61,10 +62,7 @@ async fn main() -> ExitCode {
         ))
         .build();
 
-    let meilisearch_client = match meilisearch_sdk::client::Client::new(
-        app_config.meilisearch.host.clone(),
-        Some(app_config.meilisearch.api_key.clone()),
-    ) {
+    let meilisearch_client = match meilisearch::init(&app_config).await {
         Ok(c) => c,
         Err(e) => {
             tracing::error!("{}", e.to_string());

@@ -5,7 +5,7 @@ use sea_orm::{
     ActiveModelTrait as _, ActiveValue::Set, ConnectionTrait, DbErr, EntityTrait,
     sea_query::OnConflict,
 };
-use tml_application::app_trait::music_info_provider::Trait as _;
+use tml_application::app_trait::music_info_provider::{MusicInfoMeiliSearch, Trait as _};
 use tokio::sync::mpsc;
 use tokio_stream::wrappers::UnboundedReceiverStream;
 
@@ -22,6 +22,8 @@ pub enum Error {
     RepositoryError(#[from] RepositoryError),
     #[error("Storage id not found error")]
     StorageIdNotFoundError,
+    #[error("Meilisearch error: {0}")]
+    MeilisearchError(#[from] meilisearch_sdk::errors::Error),
 }
 
 impl JobHandler {
@@ -41,6 +43,7 @@ impl JobHandler {
         &self,
         job_type: tml_domain::model::mgmt::job::JobType,
         job_args: &serde_json::Value,
+        meilisearch_index_name: &str,
     ) -> Result<(), Error> {
         match job_type {
             tml_domain::model::mgmt::job::JobType::Undefined => (),
@@ -48,7 +51,8 @@ impl JobHandler {
                 let storage_id = job_args["storage_id"]
                     .as_i64()
                     .ok_or(Error::StorageIdNotFoundError)?;
-                self.handle_scan_incremental_job(storage_id).await?;
+                self.handle_scan_incremental_job(storage_id, meilisearch_index_name)
+                    .await?;
             }
             tml_domain::model::mgmt::job::JobType::BuildIndex => (),
             tml_domain::model::mgmt::job::JobType::UpdateIndex => (),
@@ -64,8 +68,12 @@ impl tml_application::app_trait::job_handler::Trait for JobHandler {
         job_id: i64,
         job_type: tml_domain::model::mgmt::job::JobType,
         job_args: serde_json::Value,
+        meilisearch_index_name: &str,
     ) {
-        match self.handle_inner(job_type, &job_args).await {
+        match self
+            .handle_inner(job_type, &job_args, meilisearch_index_name)
+            .await
+        {
             Ok(_) => {
                 match self.repository.finish_job(job_id, true, "").await {
                     Ok(_) => {}
@@ -96,12 +104,30 @@ impl tml_application::app_trait::job_handler::Trait for JobHandler {
 
 // scan_incremental
 impl JobHandler {
-    async fn handle_scan_incremental_job(&self, storage_id: i64) -> Result<(), Error> {
+    async fn handle_scan_incremental_job(
+        &self,
+        storage_id: i64,
+        meilisearch_index_name: &str,
+    ) -> Result<(), Error> {
         let path = self.repository.get_storage_path(storage_id).await?;
         let mut music_info_chunk_stream = self.get_music_info_chunk_stream(path).await;
         while let Some(chunk) = music_info_chunk_stream.next().await {
             self.repository
-                .create_or_update_music_info(storage_id, chunk.into_iter())
+                .create_or_update_music_info(storage_id, chunk.clone().into_iter())
+                .await?;
+            let meilisearch_models: Vec<_> = chunk
+                .into_iter()
+                .map(|x| MusicInfoMeiliSearch {
+                    id: hex::encode(x.0),
+                    artists: x.1.artists,
+                    album_title: x.1.album_title,
+                    title: x.1.title,
+                })
+                .collect();
+            let _task = self
+                .meilisearch_client
+                .index(meilisearch_index_name.to_string())
+                .add_documents(&meilisearch_models, Some("id"))
                 .await?;
         }
         self.repository
@@ -188,7 +214,7 @@ impl Repository {
     async fn create_or_update_music_info(
         &self,
         storage_id: i64,
-        music_info: impl Iterator<
+        music_info: impl IntoIterator<
             Item = (
                 Vec<u8>,
                 tml_application::app_trait::music_info_provider::MusicInfo,
@@ -198,7 +224,7 @@ impl Repository {
         let on_conflict = OnConflict::column(music_info::Column::Id)
             .update_columns([music_info::Column::FilePath])
             .to_owned();
-        let music_info_collection = music_info.map(|x| music_info::ActiveModel {
+        let music_info_collection = music_info.into_iter().map(|x| music_info::ActiveModel {
             id: Set(x.0),
             artists: Set(x.1.artists),
             album_title: Set(x.1.album_title),

@@ -59,6 +59,7 @@ pub async fn handle(
     request: Request<'_>,
     repository: &impl repository::Trait,
     job_handler: &impl crate::app_trait::job_handler::Trait,
+    meilisearch_index_name: &str,
 ) -> Result<Response, Error> {
     validation::validate(&request)?;
     let new_job = repository
@@ -72,6 +73,11 @@ pub async fn handle(
     let job_handler2 = job_handler.clone();
     let job_type = request.job_type.clone();
     let job_args = request.job_args.clone();
-    tokio::spawn(async move { job_handler2.handle(new_job.id, job_type, job_args).await });
+    let meilisearch_index_name = meilisearch_index_name.to_string();
+    tokio::spawn(async move {
+        job_handler2
+            .handle(new_job.id, job_type, job_args, &meilisearch_index_name)
+            .await
+    });
     Ok(Response { id: new_job.id })
 }

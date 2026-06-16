@@ -68,6 +68,7 @@ pub async fn handle(
             state.music_info_provider,
             state.meilisearch_client,
         ),
+        &state.app_config.meilisearch.index_name,
     )
     .await
     {
