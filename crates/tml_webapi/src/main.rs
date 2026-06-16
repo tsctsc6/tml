@@ -61,6 +61,17 @@ async fn main() -> ExitCode {
         ))
         .build();
 
+    let meilisearch_client = match meilisearch_sdk::client::Client::new(
+        app_config.meilisearch.host.clone(),
+        Some(app_config.meilisearch.api_key.clone()),
+    ) {
+        Ok(c) => c,
+        Err(e) => {
+            tracing::error!("{}", e.to_string());
+            return ExitCode::FAILURE;
+        }
+    };
+
     let app_state = AppState {
         app_config: Arc::clone(&app_config),
         cli: Arc::clone(&cli),
@@ -72,6 +83,7 @@ async fn main() -> ExitCode {
         db,
         user_id_security_stamp_cache,
         music_info_provider: tml_infrastructure::music_info_provider::MusicInfoProvider,
+        meilisearch_client,
     };
 
     let result = match &Arc::clone(&cli).command {

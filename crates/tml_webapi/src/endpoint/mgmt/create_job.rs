@@ -66,6 +66,7 @@ pub async fn handle(
         &tml_infrastructure::job_handler::JobHandler::new(
             tml_infrastructure::job_handler::Repository::new(state.db),
             state.music_info_provider,
+            state.meilisearch_client,
         ),
     )
     .await

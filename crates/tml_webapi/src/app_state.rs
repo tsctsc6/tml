@@ -16,4 +16,5 @@ pub struct AppState {
     /// Cache-Aside Pattern
     pub user_id_security_stamp_cache: Cache<i64, Option<uuid::Uuid>>,
     pub music_info_provider: tml_infrastructure::music_info_provider::MusicInfoProvider,
+    pub meilisearch_client: meilisearch_sdk::client::Client,
 }

@@ -1,4 +1,5 @@
 use crate::entity::{app::music_info, mgmt::job};
+use meilisearch_sdk::client::Client;
 use sea_orm::{
     ActiveModelTrait as _, ActiveValue::Set, ConnectionTrait, DbErr, EntityTrait,
     sea_query::OnConflict,
@@ -9,6 +10,7 @@ use tml_application::app_trait::music_info_provider::Trait as _;
 pub struct JobHandler {
     repository: Repository,
     music_info_provider: crate::music_info_provider::MusicInfoProvider,
+    pub meilisearch_client: Client,
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -23,10 +25,12 @@ impl JobHandler {
     pub fn new(
         repository: Repository,
         music_info_provider: crate::music_info_provider::MusicInfoProvider,
+        meilisearch_client: Client,
     ) -> Self {
         JobHandler {
             repository,
             music_info_provider,
+            meilisearch_client,
         }
     }
 

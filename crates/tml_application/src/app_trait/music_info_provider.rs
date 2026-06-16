@@ -13,6 +13,14 @@ pub struct MusicInfo {
     pub file_path: String,
 }
 
+pub struct MusicInfoMeiliSearch {
+    /// hex-encoded, 128 bit
+    pub id: String,
+    pub title: String,
+    pub artists: Vec<String>,
+    pub album_title: String,
+}
+
 pub trait Trait: Send + Sync + Clone + 'static {
     fn scan(&self, path: &str) -> impl Iterator<Item = (Vec<u8>, MusicInfo)> + Send;
 }
