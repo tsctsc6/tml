@@ -101,9 +101,13 @@ async fn start(app_state: AppState) -> ExitCode {
             return ExitCode::FAILURE;
         }
     };
-    let user_routes = axum::Router::new()
+    let auth_routes = axum::Router::new()
         .route("/register", post(endpoint::auth::register::handle))
-        .route("/login", post(endpoint::auth::login::handle));
+        .route("/login", post(endpoint::auth::login::handle))
+        .route(
+            "/read_user_info",
+            get(endpoint::auth::read_user_info::handle),
+        );
     let mgmt_routes = axum::Router::new()
         .route("/create_job", post(endpoint::mgmt::create_job::handle))
         .route(
@@ -184,7 +188,7 @@ async fn start(app_state: AppState) -> ExitCode {
         );
     let app = axum::Router::new()
         .nest("/api/mgmt", mgmt_routes)
-        .nest("/api/user", user_routes)
+        .nest("/api/auth", auth_routes)
         .nest("/api/app", app_routes)
         .with_state(app_state);
     match axum::serve(listener, app).await {
