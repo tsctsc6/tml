@@ -135,6 +135,10 @@ async fn start(app_state: AppState) -> ExitCode {
             "/read_all_storage",
             get(endpoint::mgmt::read_all_storage::handle),
         )
+        .route(
+            "/read_all_normal_user",
+            get(endpoint::mgmt::read_all_normal_user::handle),
+        )
         .route("/read_all_job", get(endpoint::mgmt::read_all_job::handle))
         .route("/read_job", get(endpoint::mgmt::read_job::handle));
     let app_routes = axum::Router::new()
