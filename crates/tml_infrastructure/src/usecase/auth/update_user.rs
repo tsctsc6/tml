@@ -1,15 +1,17 @@
 use crate::entity::auth::user;
+use moka::future::Cache;
 use sea_orm::{ActiveModelTrait, ActiveValue::Set, EntityTrait, SqlErr};
 use tml_application::usecase::auth::update_user;
 
 #[derive(Clone)]
 pub struct Repository {
     db: sea_orm::DatabaseConnection,
+    cache: Cache<i64, Option<uuid::Uuid>>,
 }
 
 impl Repository {
-    pub fn new(db: sea_orm::DatabaseConnection) -> Self {
-        Repository { db }
+    pub fn new(db: sea_orm::DatabaseConnection, cache: Cache<i64, Option<uuid::Uuid>>) -> Self {
+        Repository { db, cache }
     }
 }
 
@@ -30,12 +32,17 @@ impl update_user::repository::Trait for Repository {
             .ok_or(update_user::repository::Error::UserNotFound)?;
 
         let mut user_to_update: user::ActiveModel = user_to_update.into();
+        let mut need_update_security_stamp = false;
 
         if let Some(username) = username {
             user_to_update.username = Set(username.to_string());
         }
         if let Some(password_hash) = password_hash {
             user_to_update.password_hash = Set(password_hash.to_string());
+            need_update_security_stamp = true;
+        }
+
+        if need_update_security_stamp {
             user_to_update.security_stamp = Set(uuid::Uuid::new_v4());
         }
 
@@ -50,6 +57,11 @@ impl update_user::repository::Trait for Repository {
                 }
             },
         };
+
+        if need_update_security_stamp {
+            self.cache.invalidate(&id).await;
+        }
+
         Ok(updated_user.into())
     }
 }

@@ -31,7 +31,10 @@ pub async fn handle(
     claims: Claims,
     Json(request_body): Json<RequestBody>,
 ) -> (StatusCode, Json<ResponseBody>) {
-    tracing::info!("Received request: update_user for user_id={}", claims.inner.sub);
+    tracing::info!(
+        "Received request: update_user for user_id={}",
+        claims.inner.sub
+    );
     match update_user::handle(
         update_user::Request {
             user_id: claims.inner.sub,
@@ -39,7 +42,10 @@ pub async fn handle(
             password: request_body.password.as_deref(),
         },
         &state.password_hasher,
-        &tml_infrastructure::usecase::auth::update_user::Repository::new(state.db),
+        &tml_infrastructure::usecase::auth::update_user::Repository::new(
+            state.db,
+            state.user_id_security_stamp_cache,
+        ),
     )
     .await
     {
@@ -81,9 +87,7 @@ pub async fn handle(
                     update_user::validation::Error::NoFieldsToUpdate => {
                         return (
                             StatusCode::OK,
-                            Json(ResponseBody::failed(Some(
-                                "No fields to update".into(),
-                            ))),
+                            Json(ResponseBody::failed(Some("No fields to update".into()))),
                         );
                     }
                 },
@@ -103,9 +107,7 @@ pub async fn handle(
                     update_user::repository::Error::UsernameDuplication => {
                         return (
                             StatusCode::OK,
-                            Json(ResponseBody::failed(Some(
-                                "Username already exists".into(),
-                            ))),
+                            Json(ResponseBody::failed(Some("Username already exists".into()))),
                         );
                     }
                     update_user::repository::Error::Unknown(_) => {

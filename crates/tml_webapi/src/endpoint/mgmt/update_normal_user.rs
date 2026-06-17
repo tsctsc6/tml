@@ -46,7 +46,10 @@ pub async fn handle(
             enabled: request_body.enabled,
         },
         &state.password_hasher,
-        &tml_infrastructure::usecase::mgmt::update_normal_user::Repository::new(state.db),
+        &tml_infrastructure::usecase::mgmt::update_normal_user::Repository::new(
+            state.db,
+            state.user_id_security_stamp_cache,
+        ),
     )
     .await
     {
@@ -64,13 +67,17 @@ pub async fn handle(
                     update_normal_user::validation::Error::UsernameTooLong => {
                         return (
                             StatusCode::OK,
-                            Json(ResponseBody::failed(Some("The username is too long".into()))),
+                            Json(ResponseBody::failed(Some(
+                                "The username is too long".into(),
+                            ))),
                         );
                     }
                     update_normal_user::validation::Error::UsernameTooShort => {
                         return (
                             StatusCode::OK,
-                            Json(ResponseBody::failed(Some("The username is too short".into()))),
+                            Json(ResponseBody::failed(Some(
+                                "The username is too short".into(),
+                            ))),
                         );
                     }
                     update_normal_user::validation::Error::PasswordTooShort => {
@@ -84,9 +91,7 @@ pub async fn handle(
                     update_normal_user::validation::Error::NoFieldsToUpdate => {
                         return (
                             StatusCode::OK,
-                            Json(ResponseBody::failed(Some(
-                                "No fields to update".into(),
-                            ))),
+                            Json(ResponseBody::failed(Some("No fields to update".into()))),
                         );
                     }
                 },
@@ -116,9 +121,7 @@ pub async fn handle(
                     update_normal_user::repository::Error::UsernameDuplication => {
                         return (
                             StatusCode::OK,
-                            Json(ResponseBody::failed(Some(
-                                "Username already exists".into(),
-                            ))),
+                            Json(ResponseBody::failed(Some("Username already exists".into()))),
                         );
                     }
                     update_normal_user::repository::Error::Unknown(_) => {
