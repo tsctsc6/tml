@@ -1,0 +1,134 @@
+use axum::{Json, extract::State, http::StatusCode};
+use serde::Deserialize;
+use tml_application::usecase::mgmt::update_normal_user;
+
+use crate::{app_state::AppState, extractor::Claims};
+
+#[derive(Deserialize, Debug)]
+pub struct RequestBody {
+    pub id: i64,
+    pub username: Option<String>,
+    pub password: Option<String>,
+    pub enabled: Option<bool>,
+}
+
+#[derive(serde::Serialize)]
+pub struct ResponseBody {
+    pub success: bool,
+    pub message: Option<String>,
+}
+
+impl ResponseBody {
+    fn failed(message: Option<String>) -> ResponseBody {
+        ResponseBody {
+            success: false,
+            message,
+        }
+    }
+}
+
+#[axum::debug_handler]
+pub async fn handle(
+    State(state): State<AppState>,
+    claims: Claims,
+    Json(request_body): Json<RequestBody>,
+) -> (StatusCode, Json<ResponseBody>) {
+    tracing::info!("Received request: {:?}", request_body);
+    if !claims.inner.roles.iter().any(|role| role == "admin") {
+        return (StatusCode::FORBIDDEN, Json(ResponseBody::failed(None)));
+    }
+
+    match update_normal_user::handle(
+        update_normal_user::Request {
+            id: request_body.id,
+            username: request_body.username.as_deref(),
+            password: request_body.password.as_deref(),
+            enabled: request_body.enabled,
+        },
+        &state.password_hasher,
+        &tml_infrastructure::usecase::mgmt::update_normal_user::Repository::new(state.db),
+    )
+    .await
+    {
+        Ok(_) => (
+            StatusCode::OK,
+            Json(ResponseBody {
+                success: true,
+                message: None,
+            }),
+        ),
+        Err(e) => {
+            tracing::error!("Error occurred: {}", e);
+            match e {
+                update_normal_user::Error::ValidationError(error) => match error {
+                    update_normal_user::validation::Error::UsernameTooLong => {
+                        return (
+                            StatusCode::OK,
+                            Json(ResponseBody::failed(Some("The username is too long".into()))),
+                        );
+                    }
+                    update_normal_user::validation::Error::UsernameTooShort => {
+                        return (
+                            StatusCode::OK,
+                            Json(ResponseBody::failed(Some("The username is too short".into()))),
+                        );
+                    }
+                    update_normal_user::validation::Error::PasswordTooShort => {
+                        return (
+                            StatusCode::OK,
+                            Json(ResponseBody::failed(Some(
+                                "The password is too short".into(),
+                            ))),
+                        );
+                    }
+                    update_normal_user::validation::Error::NoFieldsToUpdate => {
+                        return (
+                            StatusCode::OK,
+                            Json(ResponseBody::failed(Some(
+                                "No fields to update".into(),
+                            ))),
+                        );
+                    }
+                },
+                update_normal_user::Error::HashingError(error) => match error {
+                    _ => {
+                        return (
+                            StatusCode::INTERNAL_SERVER_ERROR,
+                            Json(ResponseBody::failed(None)),
+                        );
+                    }
+                },
+                update_normal_user::Error::RepositoryError(error) => match error {
+                    update_normal_user::repository::Error::UserNotFound => {
+                        return (
+                            StatusCode::OK,
+                            Json(ResponseBody::failed(Some("User not found".into()))),
+                        );
+                    }
+                    update_normal_user::repository::Error::UserNotNormalUser => {
+                        return (
+                            StatusCode::OK,
+                            Json(ResponseBody::failed(Some(
+                                "User is not a normal user".into(),
+                            ))),
+                        );
+                    }
+                    update_normal_user::repository::Error::UsernameDuplication => {
+                        return (
+                            StatusCode::OK,
+                            Json(ResponseBody::failed(Some(
+                                "Username already exists".into(),
+                            ))),
+                        );
+                    }
+                    update_normal_user::repository::Error::Unknown(_) => {
+                        return (
+                            StatusCode::INTERNAL_SERVER_ERROR,
+                            Json(ResponseBody::failed(None)),
+                        );
+                    }
+                },
+            }
+        }
+    }
+}

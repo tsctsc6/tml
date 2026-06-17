@@ -107,14 +107,26 @@ async fn start(app_state: AppState) -> ExitCode {
     let mgmt_routes = axum::Router::new()
         .route("/create_job", post(endpoint::mgmt::create_job::handle))
         .route(
+            "/create_normal_user",
+            post(endpoint::mgmt::create_normal_user::handle),
+        )
+        .route(
             "/create_storage",
             post(endpoint::mgmt::create_storage::handle),
+        )
+        .route(
+            "/update_normal_user",
+            post(endpoint::mgmt::update_normal_user::handle),
         )
         .route(
             "/update_storage",
             post(endpoint::mgmt::update_storage::handle),
         )
         .route("/delete_job", post(endpoint::mgmt::delete_job::handle))
+        .route(
+            "/delete_normal_user",
+            post(endpoint::mgmt::delete_normal_user::handle),
+        )
         .route(
             "/delete_storage",
             post(endpoint::mgmt::delete_storage::handle),
