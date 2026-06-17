@@ -9,7 +9,7 @@ pub struct RequestBody {
     pub music_list_id: i64,
     /// hex-encoded music_info_id, 128 bit
     pub music_info_id: String,
-    /// hex-encoded music_info_id, 128 bit, the previous item of target location 
+    /// hex-encoded music_info_id, 128 bit, the previous item of target location
     pub prev_music_info_id: Option<String>,
 }
 

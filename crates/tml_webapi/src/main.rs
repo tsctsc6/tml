@@ -161,6 +161,10 @@ async fn start(app_state: AppState) -> ExitCode {
         .route(
             "/get_music_stream",
             get(endpoint::app::get_music_stream::handle),
+        )
+        .route(
+            "/search_music_info",
+            get(endpoint::app::search_music_info::handle),
         );
     let app = axum::Router::new()
         .nest("/api/mgmt", mgmt_routes)

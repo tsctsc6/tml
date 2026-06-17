@@ -6,4 +6,5 @@ pub mod get_music_info_file_path;
 pub mod read_all_music_info_from_music_list;
 pub mod read_all_music_list;
 pub mod remove_music_info_from_music_list;
+pub mod search_music_info;
 pub mod update_music_list;
