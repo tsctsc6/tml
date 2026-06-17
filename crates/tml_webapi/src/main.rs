@@ -107,6 +107,10 @@ async fn start(app_state: AppState) -> ExitCode {
         .route(
             "/read_user_info",
             get(endpoint::auth::read_user_info::handle),
+        )
+        .route(
+            "/update_user",
+            post(endpoint::auth::update_user::handle),
         );
     let mgmt_routes = axum::Router::new()
         .route("/create_job", post(endpoint::mgmt::create_job::handle))
