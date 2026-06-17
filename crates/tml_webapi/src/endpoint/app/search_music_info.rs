@@ -12,6 +12,15 @@ pub struct QueryParams {
     pub query: String,
     pub hits_per_page: Option<usize>,
     pub page: Option<usize>,
+    pub query_field: Option<QueryField>,
+}
+
+#[derive(Deserialize, Debug)]
+pub enum QueryField {
+    All,
+    Title,
+    Artists,
+    AlbumTitle,
 }
 
 #[derive(Serialize)]
@@ -62,6 +71,23 @@ pub async fn handle(
             query: &query.query,
             hits_per_page: query.hits_per_page,
             page: query.page,
+            query_field: match query.query_field {
+                Some(f) => match f {
+                    QueryField::All => {
+                        Some(tml_application::usecase::app::search_music_info::QueryField::All)
+                    }
+                    QueryField::Title => {
+                        Some(tml_application::usecase::app::search_music_info::QueryField::Title)
+                    }
+                    QueryField::Artists => {
+                        Some(tml_application::usecase::app::search_music_info::QueryField::Artists)
+                    }
+                    QueryField::AlbumTitle => Some(
+                        tml_application::usecase::app::search_music_info::QueryField::AlbumTitle,
+                    ),
+                },
+                None => None,
+            },
         },
         &tml_infrastructure::search_engine::SearchEngine::new(
             state.meilisearch_client,

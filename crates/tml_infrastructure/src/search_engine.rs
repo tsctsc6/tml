@@ -1,6 +1,7 @@
 use meilisearch_sdk::{client::Client, search::SearchResults};
 use tml_application::{
-    app_trait::search_engine, usecase::app::search_music_info::MusicInfoSearchItem,
+    app_trait::search_engine,
+    usecase::app::search_music_info::{MusicInfoSearchItem, QueryField},
 };
 
 #[derive(Clone)]
@@ -16,6 +17,16 @@ impl SearchEngine {
             meilisearch_index_name: meilisearch_index_name.to_string(),
         }
     }
+
+    fn get_search_on_field(&self, query_field: QueryField) -> &'static [&'static str] {
+        let all = &["title", "artists", "album_title"];
+        match query_field {
+            QueryField::All => all,
+            QueryField::Title => &all[0..1],
+            QueryField::Artists => &all[1..2],
+            QueryField::AlbumTitle => &all[2..3],
+        }
+    }
 }
 
 #[async_trait::async_trait]
@@ -25,12 +36,14 @@ impl search_engine::Trait for SearchEngine {
         query: &str,
         hits_per_page: usize,
         page: usize,
+        query_field: QueryField,
     ) -> Result<search_engine::SearchResults<MusicInfoSearchItem>, search_engine::Error> {
         let results: SearchResults<MusicInfoSearchItem> = self
             .client
             .index(self.meilisearch_index_name.clone())
             .search()
             .with_query(query)
+            .with_attributes_to_search_on(self.get_search_on_field(query_field))
             .with_show_matches_position(true)
             .with_hits_per_page(hits_per_page)
             .with_page(page)

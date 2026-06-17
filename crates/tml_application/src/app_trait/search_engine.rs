@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
 
-use crate::usecase::app::search_music_info::MusicInfoSearchItem;
+use crate::usecase::app::search_music_info::{MusicInfoSearchItem, QueryField};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct SearchResults<T> {
@@ -57,5 +57,6 @@ pub trait Trait: Send + Sync + Clone + 'static {
         query: &str,
         hits_per_page: usize,
         page: usize,
+        query_field: QueryField,
     ) -> Result<SearchResults<MusicInfoSearchItem>, Error>;
 }

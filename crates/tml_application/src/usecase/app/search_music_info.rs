@@ -4,6 +4,14 @@ pub struct Request<'a> {
     pub query: &'a str,
     pub hits_per_page: Option<usize>,
     pub page: Option<usize>,
+    pub query_field: Option<QueryField>,
+}
+
+pub enum QueryField {
+    All,
+    Title,
+    Artists,
+    AlbumTitle,
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Clone)]
@@ -31,8 +39,9 @@ pub async fn handle(
 ) -> Result<Response, Error> {
     let hits_per_page = request.hits_per_page.unwrap_or(10);
     let page = request.page.unwrap_or(1);
+    let query_field = request.query_field.unwrap_or(QueryField::All);
     let results = search_engine
-        .search_music_info(request.query, hits_per_page, page)
+        .search_music_info(request.query, hits_per_page, page, query_field)
         .await?;
     Ok(Response { results })
 }
