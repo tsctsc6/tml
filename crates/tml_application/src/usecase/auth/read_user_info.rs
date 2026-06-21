@@ -11,10 +11,7 @@ pub mod repository {
 
     #[async_trait::async_trait]
     pub trait Trait: Send + Sync + Clone + 'static {
-        async fn find_user_by_id(
-            &self,
-            id: i64,
-        ) -> Result<(user::Model, Vec<String>), Error>;
+        async fn find_user_by_id(&self, id: i64) -> Result<(user::Model, Vec<String>), Error>;
     }
 }
 

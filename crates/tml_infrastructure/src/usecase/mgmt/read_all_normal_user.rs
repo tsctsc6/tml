@@ -21,10 +21,8 @@ impl read_all_normal_user::repository::Trait for Repository {
         &self,
         page_index: u64,
         page_size: u64,
-    ) -> Result<
-        read_all_normal_user::repository::PageResult,
-        read_all_normal_user::repository::Error,
-    > {
+    ) -> Result<read_all_normal_user::repository::PageResult, read_all_normal_user::repository::Error>
+    {
         let normal_user_role = role::Entity::find_by_name("normal-user")
             .one(&self.db)
             .await

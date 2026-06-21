@@ -63,13 +63,17 @@ pub async fn handle(
                     create_normal_user::validation::Error::UsernameTooLong => {
                         return (
                             StatusCode::OK,
-                            Json(ResponseBody::failed(Some("The username is too long".into()))),
+                            Json(ResponseBody::failed(Some(
+                                "The username is too long".into(),
+                            ))),
                         );
                     }
                     create_normal_user::validation::Error::UsernameTooShort => {
                         return (
                             StatusCode::OK,
-                            Json(ResponseBody::failed(Some("The username is too short".into()))),
+                            Json(ResponseBody::failed(Some(
+                                "The username is too short".into(),
+                            ))),
                         );
                     }
                     create_normal_user::validation::Error::PasswordTooShort => {

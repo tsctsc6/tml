@@ -85,7 +85,11 @@ pub async fn handle(
         None => None,
     };
     repository
-        .update_user(request.user_id, request.username, hashed_password.as_deref())
+        .update_user(
+            request.user_id,
+            request.username,
+            hashed_password.as_deref(),
+        )
         .await?;
     Ok(())
 }

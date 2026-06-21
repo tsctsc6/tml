@@ -41,10 +41,7 @@ pub mod validation {
     }
 
     pub fn validate(request: &super::Request<'_>) -> Result<(), Error> {
-        if request.username.is_none()
-            && request.password.is_none()
-            && request.enabled.is_none()
-        {
+        if request.username.is_none() && request.password.is_none() && request.enabled.is_none() {
             return Err(Error::NoFieldsToUpdate);
         }
         if let Some(username) = request.username {
