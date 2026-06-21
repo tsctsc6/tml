@@ -43,7 +43,7 @@ pub async fn handle(
     let job_type = match request_body.job_type.as_str() {
         "scan_incremental" => job::JobType::ScanIncremental,
         "build_index" => job::JobType::BuildIndex,
-        "update_index" => job::JobType::UpdateIndex,
+        "update_index" => job::JobType::RebuildIndex,
         _ => {
             return (
                 StatusCode::OK,

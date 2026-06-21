@@ -17,6 +17,8 @@ pub enum JobType {
     ScanIncremental,
     BuildIndex,
     UpdateIndex,
+    DeleteIndex,
+    RebuildIndex,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

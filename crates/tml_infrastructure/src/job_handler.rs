@@ -56,6 +56,8 @@ impl JobHandler {
             }
             tml_domain::model::mgmt::job::JobType::BuildIndex => (),
             tml_domain::model::mgmt::job::JobType::UpdateIndex => (),
+            tml_domain::model::mgmt::job::JobType::DeleteIndex => (),
+            tml_domain::model::mgmt::job::JobType::RebuildIndex => (),
         };
         Ok(())
     }
