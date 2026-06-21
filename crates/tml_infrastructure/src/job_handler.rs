@@ -54,10 +54,19 @@ impl JobHandler {
                 self.handle_scan_incremental_job(storage_id, meilisearch_index_name)
                     .await?;
             }
-            tml_domain::model::mgmt::job::JobType::BuildIndex => (),
-            tml_domain::model::mgmt::job::JobType::UpdateIndex => (),
-            tml_domain::model::mgmt::job::JobType::DeleteIndex => (),
-            tml_domain::model::mgmt::job::JobType::RebuildIndex => (),
+            tml_domain::model::mgmt::job::JobType::BuildIndex => {
+                self.handle_build_index_job(meilisearch_index_name).await?;
+            }
+            tml_domain::model::mgmt::job::JobType::UpdateIndex => {
+                self.handle_update_index_job(meilisearch_index_name).await?;
+            }
+            tml_domain::model::mgmt::job::JobType::DeleteIndex => {
+                self.handle_delete_index_job(meilisearch_index_name).await?;
+            }
+            tml_domain::model::mgmt::job::JobType::RebuildIndex => {
+                self.handle_rebuild_index_job(meilisearch_index_name)
+                    .await?;
+            }
         };
         Ok(())
     }
@@ -111,6 +120,7 @@ impl JobHandler {
         storage_id: i64,
         meilisearch_index_name: &str,
     ) -> Result<(), Error> {
+        self.handle_build_index_job(meilisearch_index_name).await?;
         let path = self.repository.get_storage_path(storage_id).await?;
         let mut music_info_chunk_stream = self.get_music_info_chunk_stream(path).await;
         while let Some(chunk) = music_info_chunk_stream.next().await {
@@ -253,6 +263,108 @@ impl Repository {
                 format!("REINDEX INDEX CONCURRENTLY {}", index),
             ))
             .await?;
+        Ok(())
+    }
+
+    /// Return chunk with 500 items from database
+    async fn get_music_info_chunk_stream(
+        &self,
+    ) -> impl tokio_stream::Stream<Item = Vec<music_info::Model>> {
+        let db = self.db.clone();
+        let (tx, rx) = mpsc::unbounded_channel();
+
+        tokio::task::spawn(async move {
+            let limit: u64 = 500;
+            let mut cursor: Option<Vec<u8>> = None;
+            loop {
+                let mut select = music_info::Entity::find().cursor_by(music_info::Column::Id);
+                if let Some(ref c) = cursor {
+                    select.after(c.clone());
+                }
+                let results = select.first(limit).all(&db).await;
+                match results {
+                    Ok(rows) => {
+                        if rows.is_empty() {
+                            break;
+                        }
+                        cursor = rows.last().map(|r| r.id.clone());
+                        if tx.send(rows).is_err() {
+                            break;
+                        }
+                    }
+                    Err(e) => {
+                        tracing::error!("Failed to fetch music_info chunk: {}", e);
+                        break;
+                    }
+                }
+            }
+        });
+
+        UnboundedReceiverStream::new(rx)
+    }
+}
+
+// build_index
+impl JobHandler {
+    async fn handle_build_index_job(&self, meilisearch_index_name: &str) -> Result<(), Error> {
+        let index = self
+            .meilisearch_client
+            .index(meilisearch_index_name.to_string());
+        let task = index.set_filterable_attributes(&["artists"]).await?;
+        task.wait_for_completion(&self.meilisearch_client, None, None)
+            .await?;
+        let task = index
+            .set_searchable_attributes(&["title", "artists", "album_title"])
+            .await?;
+        task.wait_for_completion(&self.meilisearch_client, None, None)
+            .await?;
+        Ok(())
+    }
+}
+
+// update_index
+impl JobHandler {
+    async fn handle_update_index_job(&self, meilisearch_index_name: &str) -> Result<(), Error> {
+        let mut chunk_stream = self.repository.get_music_info_chunk_stream().await;
+        while let Some(chunk) = chunk_stream.next().await {
+            let meilisearch_models: Vec<_> = chunk
+                .into_iter()
+                .map(|m| MusicInfoMeiliSearch {
+                    id: hex::encode(m.id),
+                    artists: m.artists,
+                    album_title: m.album_title,
+                    title: m.title,
+                })
+                .collect();
+            let _task = self
+                .meilisearch_client
+                .index(meilisearch_index_name.to_string())
+                .add_documents(&meilisearch_models, Some("id"))
+                .await?;
+        }
+        Ok(())
+    }
+}
+
+// delete_index
+impl JobHandler {
+    async fn handle_delete_index_job(&self, meilisearch_index_name: &str) -> Result<(), Error> {
+        let task = self
+            .meilisearch_client
+            .delete_index(meilisearch_index_name)
+            .await?;
+        task.wait_for_completion(&self.meilisearch_client, None, None)
+            .await?;
+        Ok(())
+    }
+}
+
+// rebuild_index
+impl JobHandler {
+    async fn handle_rebuild_index_job(&self, meilisearch_index_name: &str) -> Result<(), Error> {
+        self.handle_delete_index_job(meilisearch_index_name).await?;
+        self.handle_build_index_job(meilisearch_index_name).await?;
+        self.handle_update_index_job(meilisearch_index_name).await?;
         Ok(())
     }
 }
