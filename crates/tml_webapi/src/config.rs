@@ -8,6 +8,7 @@ pub struct AppConfig {
     pub database: Database,
     pub jwt: Jwt,
     pub user_id_security_stamp_cache: UserIdSecurityStampCache,
+    pub meilisearch: Meilisearch,
 }
 
 #[derive(Debug, Deserialize)]
@@ -25,6 +26,13 @@ pub struct Jwt {
 pub struct UserIdSecurityStampCache {
     pub max_capacity: u64,
     pub time_to_live_in_second: u64,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct Meilisearch {
+    pub host: String,
+    pub api_key: String,
+    pub index_name: String,
 }
 
 pub fn init_config() -> Result<AppConfig, ConfigError> {

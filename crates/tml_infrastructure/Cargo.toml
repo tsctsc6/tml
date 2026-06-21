@@ -21,3 +21,8 @@ tracing = { workspace = true }
 lofty = { workspace = true }
 walkdir = { workspace = true }
 xxhash-rust = { workspace = true }
+meilisearch-sdk = { workspace = true }
+tokio = { workspace = true }
+tokio-stream = { workspace = true }
+futures = { workspace = true }
+hex = { workspace = true }

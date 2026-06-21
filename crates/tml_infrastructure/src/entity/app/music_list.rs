@@ -15,3 +15,13 @@ pub struct Model {
 }
 
 impl ActiveModelBehavior for ActiveModel {}
+
+impl From<Model> for tml_domain::model::app::music_list::Model {
+    fn from(model: Model) -> Self {
+        tml_domain::model::app::music_list::Model {
+            id: model.id,
+            name: model.name,
+            user_id: model.user_id,
+        }
+    }
+}

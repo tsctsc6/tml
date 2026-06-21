@@ -45,6 +45,8 @@ impl From<JobType> for tml_domain::model::mgmt::job::JobType {
             JobType::ScanIncremental => tml_domain::model::mgmt::job::JobType::ScanIncremental,
             JobType::BuildIndex => tml_domain::model::mgmt::job::JobType::BuildIndex,
             JobType::UpdateIndex => tml_domain::model::mgmt::job::JobType::UpdateIndex,
+            JobType::DeleteIndex => tml_domain::model::mgmt::job::JobType::DeleteIndex,
+            JobType::RebuildIndex => tml_domain::model::mgmt::job::JobType::RebuildIndex,
         }
     }
 }
@@ -67,6 +69,8 @@ pub enum JobType {
     ScanIncremental = 1,
     BuildIndex = 2,
     UpdateIndex = 3,
+    DeleteIndex = 4,
+    RebuildIndex = 5,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, EnumIter, DeriveActiveEnum)]

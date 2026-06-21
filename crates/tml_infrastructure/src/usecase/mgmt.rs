@@ -1,5 +1,12 @@
 pub mod create_job;
+pub mod create_normal_user;
 pub mod create_storage;
+pub mod delete_job;
+pub mod delete_normal_user;
 pub mod delete_storage;
+pub mod read_all_job;
+pub mod read_all_normal_user;
 pub mod read_all_storage;
+pub mod read_job;
+pub mod update_normal_user;
 pub mod update_storage;

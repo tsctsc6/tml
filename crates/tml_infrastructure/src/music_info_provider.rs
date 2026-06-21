@@ -15,8 +15,6 @@ pub struct MusicInfoProvider;
 pub enum Error {
     #[error("Skiped")]
     Skiped,
-    #[error("WalkDir error: {0}")]
-    WalkDirError(#[from] walkdir::Error),
     #[error("Lofty error: {0}")]
     LoftyError(#[from] lofty::error::LoftyError),
     #[error("Std IO error: {0}")]
@@ -56,12 +54,22 @@ impl MusicInfoProvider {
         Vec<u8>,
         tml_application::app_trait::music_info_provider::MusicInfo,
     )> {
-        match self.map_to_music_info_result(base_path, entry) {
+        let entry = match entry {
+            Ok(e) => e,
+            Err(e) => {
+                tracing::error!("{}", e);
+                return None;
+            }
+        };
+        match self.map_to_music_info_result(base_path, &entry) {
             Ok(m) => {
                 return Some(m);
             }
             Err(e) => {
-                tracing::warn!("{}", e);
+                if let Error::Skiped = e {
+                    return None;
+                }
+                tracing::error!("{} {}", &entry.path().to_string_lossy(), e);
                 return None;
             }
         };
@@ -70,7 +78,7 @@ impl MusicInfoProvider {
     fn map_to_music_info_result(
         &self,
         base_path: &str,
-        entry: Result<walkdir::DirEntry, walkdir::Error>,
+        entry: &walkdir::DirEntry,
     ) -> Result<
         (
             Vec<u8>,
@@ -78,15 +86,18 @@ impl MusicInfoProvider {
         ),
         Error,
     > {
-        let entry = entry?;
         let path = entry.path();
+        tracing::debug!("Checking: {}", path.to_string_lossy());
         if path.is_dir() {
-            return Err(Error::Skiped);
+            tracing::debug!("Skiped: {}", path.to_string_lossy());
+            Err(Error::Skiped)?;
         }
         let extension = path.extension().and_then(OsStr::to_str);
         if extension != Some("flac") && extension != Some("mp3") {
-            return Err(Error::Skiped);
+            tracing::debug!("Skiped: {}", path.to_string_lossy());
+            Err(Error::Skiped)?;
         }
+        // base_path is the argument of WalkDir::new(path), so it shoud not failed.
         let relative_path = path.strip_prefix(base_path).unwrap().to_string_lossy();
 
         tracing::trace!("Path: {}", entry.path().display());
@@ -134,6 +145,7 @@ impl MusicInfoProvider {
         };
         // order the keies
         let json_value = serde_json::to_value(&music_info)?;
+        // json_value is form last line, so it shoud not failed.
         let sorted_map: BTreeMap<String, serde_json::Value> =
             serde_json::from_value(json_value).unwrap();
         let json = serde_json::to_string(&sorted_map)?;

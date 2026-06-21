@@ -131,6 +131,15 @@ impl MigrationTrait for Migration {
             )
             .await?;
         manager
+            .create_index(
+                Index::create()
+                    .table(("mgmt", "job"))
+                    .name("idx-job-created_at")
+                    .col("created_at")
+                    .to_owned(),
+            )
+            .await?;
+        manager
             .create_table(
                 Table::create()
                     .table(("mgmt", "storage"))
@@ -171,6 +180,8 @@ impl MigrationTrait for Migration {
                     .to_owned(),
             )
             .await?;
+        db.execute_unprepared("ALTER INDEX app.music_info_pkey SET (fillfactor = 80);")
+            .await?;
         manager
             .create_index(
                 Index::create()
@@ -186,7 +197,7 @@ impl MigrationTrait for Migration {
                     .table(("app", "music_list"))
                     .if_not_exists()
                     .col(big_pk_auto("id"))
-                    .col(string("name").unique_key())
+                    .col(string("name").not_null())
                     .col(big_integer("user_id").not_null())
                     .foreign_key(
                         ForeignKey::create()
@@ -205,8 +216,10 @@ impl MigrationTrait for Migration {
             .create_index(
                 Index::create()
                     .table(("app", "music_list"))
-                    .name("idx-music_list-user_id")
+                    .name("idx-music_list-user_id-name")
                     .col("user_id")
+                    .col("name")
+                    .unique()
                     .to_owned(),
             )
             .await?;
@@ -243,7 +256,7 @@ impl MigrationTrait for Migration {
                             .on_delete(ForeignKeyAction::Cascade)
                             .on_update(ForeignKeyAction::Cascade),
                     )
-                    .col(string("order").not_null())
+                    .col(binary("order").not_null())
                     .to_owned(),
             )
             .await?;

@@ -9,6 +9,7 @@ tml_application = { workspace = true }
 tml_infrastructure = { workspace = true }
 tml_migration = { workspace = true }
 
+meilisearch-sdk = { workspace = true }
 sea-orm = { workspace = true }
 tokio = { workspace = true }
 serde = { workspace = true }
@@ -24,3 +25,9 @@ axum = { workspace = true }
 moka = { workspace = true }
 uuid = { workspace = true }
 serde_json = { workspace = true }
+chrono = { workspace = true }
+hex = { workspace = true }
+axum-extra = { workspace = true }
+axum-range = { workspace = true }
+percent-encoding = { workspace = true }
+reqwest = { workspace = true }

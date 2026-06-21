@@ -30,6 +30,8 @@ impl create_job::repository::Trait for Repository {
                 }
                 tml_domain::model::mgmt::job::JobType::BuildIndex => job::JobType::BuildIndex,
                 tml_domain::model::mgmt::job::JobType::UpdateIndex => job::JobType::UpdateIndex,
+                tml_domain::model::mgmt::job::JobType::DeleteIndex => job::JobType::DeleteIndex,
+                tml_domain::model::mgmt::job::JobType::RebuildIndex => job::JobType::RebuildIndex,
             }),
             job_args: Set(job_args.clone()),
             status: Set(job::JobStatus::Running),

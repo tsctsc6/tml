@@ -44,6 +44,8 @@ pub async fn handle(
         "scan_incremental" => job::JobType::ScanIncremental,
         "build_index" => job::JobType::BuildIndex,
         "update_index" => job::JobType::UpdateIndex,
+        "delete_index" => job::JobType::DeleteIndex,
+        "rebuild_index" => job::JobType::RebuildIndex,
         _ => {
             return (
                 StatusCode::OK,
@@ -66,7 +68,9 @@ pub async fn handle(
         &tml_infrastructure::job_handler::JobHandler::new(
             tml_infrastructure::job_handler::Repository::new(state.db),
             state.music_info_provider,
+            state.meilisearch_client,
         ),
+        &state.app_config.meilisearch.index_name,
     )
     .await
     {

@@ -1,6 +1,6 @@
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
-#[derive(Serialize)]
+#[derive(Serialize, Clone)]
 pub struct MusicInfo {
     pub title: String,
     pub artists: Vec<String>,
@@ -11,6 +11,15 @@ pub struct MusicInfo {
     pub channels: i16,
     pub bit_depth: i16,
     pub file_path: String,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct MusicInfoMeiliSearch {
+    /// hex-encoded, 128 bit
+    pub id: String,
+    pub title: String,
+    pub artists: Vec<String>,
+    pub album_title: String,
 }
 
 pub trait Trait: Send + Sync + Clone + 'static {

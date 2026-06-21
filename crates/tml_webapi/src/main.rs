@@ -5,6 +5,7 @@ pub mod endpoint;
 pub mod extractor;
 pub mod logger;
 pub mod manage;
+pub mod meilisearch;
 
 use std::{process::ExitCode, sync::Arc, time::Duration};
 
@@ -61,6 +62,14 @@ async fn main() -> ExitCode {
         ))
         .build();
 
+    let meilisearch_client = match meilisearch::init(&app_config).await {
+        Ok(c) => c,
+        Err(e) => {
+            tracing::error!("{}", e.to_string());
+            return ExitCode::FAILURE;
+        }
+    };
+
     let app_state = AppState {
         app_config: Arc::clone(&app_config),
         cli: Arc::clone(&cli),
@@ -72,6 +81,7 @@ async fn main() -> ExitCode {
         db,
         user_id_security_stamp_cache,
         music_info_provider: tml_infrastructure::music_info_provider::MusicInfoProvider,
+        meilisearch_client,
     };
 
     let result = match &Arc::clone(&cli).command {
@@ -91,18 +101,36 @@ async fn start(app_state: AppState) -> ExitCode {
             return ExitCode::FAILURE;
         }
     };
-    let user_routes = axum::Router::new()
+    let auth_routes = axum::Router::new()
         .route("/register", post(endpoint::auth::register::handle))
-        .route("/login", post(endpoint::auth::login::handle));
+        .route("/login", post(endpoint::auth::login::handle))
+        .route(
+            "/read_user_info",
+            get(endpoint::auth::read_user_info::handle),
+        )
+        .route("/update_user", post(endpoint::auth::update_user::handle));
     let mgmt_routes = axum::Router::new()
         .route("/create_job", post(endpoint::mgmt::create_job::handle))
+        .route(
+            "/create_normal_user",
+            post(endpoint::mgmt::create_normal_user::handle),
+        )
         .route(
             "/create_storage",
             post(endpoint::mgmt::create_storage::handle),
         )
         .route(
+            "/update_normal_user",
+            post(endpoint::mgmt::update_normal_user::handle),
+        )
+        .route(
             "/update_storage",
             post(endpoint::mgmt::update_storage::handle),
+        )
+        .route("/delete_job", post(endpoint::mgmt::delete_job::handle))
+        .route(
+            "/delete_normal_user",
+            post(endpoint::mgmt::delete_normal_user::handle),
         )
         .route(
             "/delete_storage",
@@ -111,10 +139,58 @@ async fn start(app_state: AppState) -> ExitCode {
         .route(
             "/read_all_storage",
             get(endpoint::mgmt::read_all_storage::handle),
+        )
+        .route(
+            "/read_all_normal_user",
+            get(endpoint::mgmt::read_all_normal_user::handle),
+        )
+        .route("/read_all_job", get(endpoint::mgmt::read_all_job::handle))
+        .route("/read_job", get(endpoint::mgmt::read_job::handle));
+    let app_routes = axum::Router::new()
+        .route(
+            "/add_music_info_to_music_list",
+            post(endpoint::app::add_music_info_to_music_list::handle),
+        )
+        .route(
+            "/create_music_list",
+            post(endpoint::app::create_music_list::handle),
+        )
+        .route(
+            "/update_music_list",
+            post(endpoint::app::update_music_list::handle),
+        )
+        .route(
+            "/delete_music_list",
+            post(endpoint::app::delete_music_list::handle),
+        )
+        .route(
+            "/read_all_music_list",
+            get(endpoint::app::read_all_music_list::handle),
+        )
+        .route(
+            "/read_all_music_info_from_music_list",
+            get(endpoint::app::read_all_music_info_from_music_list::handle),
+        )
+        .route(
+            "/remove_music_info_from_music_list",
+            post(endpoint::app::remove_music_info_from_music_list::handle),
+        )
+        .route(
+            "/change_music_info_order_in_music_list",
+            post(endpoint::app::change_music_info_order_in_music_list::handle),
+        )
+        .route(
+            "/get_music_stream",
+            get(endpoint::app::get_music_stream::handle),
+        )
+        .route(
+            "/search_music_info",
+            get(endpoint::app::search_music_info::handle),
         );
     let app = axum::Router::new()
         .nest("/api/mgmt", mgmt_routes)
-        .nest("/api/user", user_routes)
+        .nest("/api/auth", auth_routes)
+        .nest("/api/app", app_routes)
         .with_state(app_state);
     match axum::serve(listener, app).await {
         Ok(_) => {}
