@@ -4,7 +4,7 @@ use crate::{
 };
 use sea_orm::{
     ActiveModelTrait, ActiveValue::Set, ColumnTrait, EntityTrait, Order, QueryFilter as _,
-    QueryOrder as _, SqlErr,
+    QueryOrder as _, QuerySelect as _, SqlErr, sea_query::LockType,
 };
 use tml_application::usecase::app::add_music_info_to_music_list;
 
@@ -29,6 +29,7 @@ impl add_music_info_to_music_list::repository::Trait for Repository {
         let last_entry = music_info_music_list::Entity::find()
             .filter(music_info_music_list::Column::MusicListId.eq(music_list_id))
             .order_by(music_info_music_list::Column::Order, Order::Desc)
+            .lock(LockType::Update)
             .one(&tx_connection.tx)
             .await
             .map_err(|e| add_music_info_to_music_list::repository::Error::Unknown(e.to_string()))?;
@@ -98,6 +99,7 @@ impl add_music_info_to_music_list::repository::Trait for Repository {
         music_list_id: i64,
     ) -> Result<i64, add_music_info_to_music_list::repository::Error> {
         let music_list = music_list::Entity::find_by_id(music_list_id)
+            .lock(LockType::Update)
             .one(&tx_connection.tx)
             .await
             .map_err(|e| -> add_music_info_to_music_list::repository::Error {

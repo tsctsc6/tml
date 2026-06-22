@@ -76,7 +76,7 @@ where
 {
     let mut tx = tx_manager
         .begin_with_config(
-            Some(app_trait::tx_context::IsolationLevel::RepeatableRead),
+            Some(app_trait::tx_context::IsolationLevel::ReadCommitted),
             None,
         )
         .await?;

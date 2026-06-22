@@ -77,7 +77,7 @@ where
 {
     let mut tx = tx_manager
         .begin_with_config(
-            Some(app_trait::tx_context::IsolationLevel::RepeatableRead),
+            Some(app_trait::tx_context::IsolationLevel::ReadCommitted),
             None,
         )
         .await?;
@@ -130,6 +130,7 @@ where
             &new_order,
         )
         .await?;
+    tx_manager.commit(tx).await?;
 
     Ok(Response { new_order })
 }

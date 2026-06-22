@@ -4,7 +4,7 @@ use crate::{
 };
 use sea_orm::{
     ActiveModelTrait, ActiveValue::Set, ColumnTrait, EntityTrait, Order, QueryFilter as _,
-    QueryOrder as _,
+    QueryOrder as _, QuerySelect as _, sea_query::LockType,
 };
 use tml_application::usecase::app::change_music_info_order_in_music_list;
 
@@ -27,6 +27,7 @@ impl change_music_info_order_in_music_list::repository::Trait for Repository {
         music_list_id: i64,
     ) -> Result<i64, change_music_info_order_in_music_list::repository::Error> {
         let music_list = music_list::Entity::find_by_id(music_list_id)
+            .lock(LockType::Update)
             .one(&tx_connection.tx)
             .await
             .map_err(|e| {
@@ -49,6 +50,7 @@ impl change_music_info_order_in_music_list::repository::Trait for Repository {
             Some(id) => {
                 let entry =
                     music_info_music_list::Entity::find_by_id((id.to_owned(), music_list_id))
+                        .lock(LockType::Update)
                         .one(&tx_connection.tx)
                         .await
                         .map_err(|e| {
@@ -70,6 +72,7 @@ impl change_music_info_order_in_music_list::repository::Trait for Repository {
                     .filter(music_info_music_list::Column::MusicListId.eq(music_list_id))
                     .filter(music_info_music_list::Column::Order.gt(prev.as_slice()))
                     .order_by(music_info_music_list::Column::Order, Order::Asc)
+                    .lock(LockType::Update)
                     .one(&tx_connection.tx)
                     .await
                     .map_err(|e| {
@@ -84,6 +87,7 @@ impl change_music_info_order_in_music_list::repository::Trait for Repository {
                 music_info_music_list::Entity::find()
                     .filter(music_info_music_list::Column::MusicListId.eq(music_list_id))
                     .order_by(music_info_music_list::Column::Order, Order::Asc)
+                    .lock(LockType::Update)
                     .one(&tx_connection.tx)
                     .await
                     .map_err(|e| {
@@ -109,6 +113,7 @@ impl change_music_info_order_in_music_list::repository::Trait for Repository {
             music_info_id.to_owned(),
             music_list_id,
         ))
+        .lock(LockType::Update)
         .one(&tx_connection.tx)
         .await
         .map_err(|e| {
