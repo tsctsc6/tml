@@ -75,9 +75,8 @@ pub async fn handle(
             prev_music_info_id: prev_music_info_id.as_deref(),
             user_id: claims.inner.sub,
         },
-        &tml_infrastructure::usecase::app::change_music_info_order_in_music_list::Repository::new(
-            state.db,
-        ),
+        &tml_infrastructure::usecase::app::change_music_info_order_in_music_list::Repository::new(),
+        &tml_infrastructure::tx_context::SeaOrmTxManager::new(state.db),
     )
     .await
     {
@@ -137,6 +136,12 @@ pub async fn handle(
                         ))),
                     );
                 }
+                change_music_info_order_in_music_list::Error::TxError(_) => {
+                    return (
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        Json(ResponseBody::failed(None)),
+                    );
+                },
             }
         }
     }
