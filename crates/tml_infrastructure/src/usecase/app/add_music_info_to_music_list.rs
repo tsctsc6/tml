@@ -1,4 +1,7 @@
-use crate::entity::app::{music_info_music_list, music_list};
+use crate::{
+    entity::app::{music_info_music_list, music_list},
+    tx_context::SeaOrmTxConnection,
+};
 use sea_orm::{
     ActiveModelTrait, ActiveValue::Set, ColumnTrait, EntityTrait, Order, QueryFilter as _,
     QueryOrder as _, SqlErr,
@@ -6,26 +9,27 @@ use sea_orm::{
 use tml_application::usecase::app::add_music_info_to_music_list;
 
 #[derive(Clone)]
-pub struct Repository {
-    db: sea_orm::DatabaseConnection,
-}
+pub struct Repository {}
 
 impl Repository {
-    pub fn new(db: sea_orm::DatabaseConnection) -> Self {
-        Repository { db }
+    pub fn new() -> Self {
+        Repository {}
     }
 }
 
 #[async_trait::async_trait]
 impl add_music_info_to_music_list::repository::Trait for Repository {
+    type Tx = SeaOrmTxConnection;
+
     async fn get_last_order(
         &self,
+        tx_connection: &mut Self::Tx,
         music_list_id: i64,
     ) -> Result<Vec<u8>, add_music_info_to_music_list::repository::Error> {
         let last_entry = music_info_music_list::Entity::find()
             .filter(music_info_music_list::Column::MusicListId.eq(music_list_id))
             .order_by(music_info_music_list::Column::Order, Order::Desc)
-            .one(&self.db)
+            .one(&tx_connection.tx)
             .await
             .map_err(|e| add_music_info_to_music_list::repository::Error::Unknown(e.to_string()))?;
         let last_order = last_entry.map(|x| x.order);
@@ -37,6 +41,7 @@ impl add_music_info_to_music_list::repository::Trait for Repository {
 
     async fn add_music_info_to_music_list(
         &self,
+        tx_connection: &mut Self::Tx,
         music_list_id: i64,
         music_info_id: &[u8],
         order: &[u8],
@@ -49,7 +54,7 @@ impl add_music_info_to_music_list::repository::Trait for Repository {
             music_list_id: Set(music_list_id),
             order: Set(order.to_owned()),
         };
-        let inserted = match new_entry.insert(&self.db).await {
+        let inserted = match new_entry.insert(&tx_connection.tx).await {
             Ok(record) => record,
             Err(e) => match e.sql_err() {
                 Some(SqlErr::UniqueConstraintViolation(_)) => {
@@ -89,10 +94,11 @@ impl add_music_info_to_music_list::repository::Trait for Repository {
 
     async fn get_music_list_owner_id(
         &self,
+        tx_connection: &mut Self::Tx,
         music_list_id: i64,
     ) -> Result<i64, add_music_info_to_music_list::repository::Error> {
         let music_list = music_list::Entity::find_by_id(music_list_id)
-            .one(&self.db)
+            .one(&tx_connection.tx)
             .await
             .map_err(|e| -> add_music_info_to_music_list::repository::Error {
                 add_music_info_to_music_list::repository::Error::Unknown(e.to_string())

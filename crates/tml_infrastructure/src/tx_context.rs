@@ -11,6 +11,12 @@ pub struct SeaOrmTxManager {
     db: DatabaseConnection,
 }
 
+impl SeaOrmTxManager {
+    pub fn new(db: DatabaseConnection) -> Self {
+        SeaOrmTxManager { db }
+    }
+}
+
 #[async_trait::async_trait]
 impl TxManager for SeaOrmTxManager {
     type Tx = SeaOrmTxConnection;

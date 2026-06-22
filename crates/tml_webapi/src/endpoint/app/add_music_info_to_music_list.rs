@@ -56,7 +56,8 @@ pub async fn handle(
             music_info_id: &music_info_id,
             user_id: claims.inner.sub,
         },
-        &tml_infrastructure::usecase::app::add_music_info_to_music_list::Repository::new(state.db),
+        &tml_infrastructure::usecase::app::add_music_info_to_music_list::Repository::new(),
+        &tml_infrastructure::tx_context::SeaOrmTxManager::new(state.db),
     )
     .await
     {
@@ -109,6 +110,12 @@ pub async fn handle(
                     );
                 },
                 add_music_info_to_music_list::Error::DecodeError(_) => {
+                    return (
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        Json(ResponseBody::failed(None)),
+                    )
+                },
+                add_music_info_to_music_list::Error::TxError(_) => {
                     return (
                         StatusCode::INTERNAL_SERVER_ERROR,
                         Json(ResponseBody::failed(None)),
