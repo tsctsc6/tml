@@ -1,5 +1,5 @@
 use sea_orm::{DatabaseConnection, DatabaseTransaction, TransactionTrait as _};
-use tml_application::app_trait::tx_context::{Error, TxConnection, TxManager};
+use tml_application::app_trait::tx_context::{self, Error, TxConnection, TxManager};
 
 pub struct SeaOrmTxConnection {
     pub tx: DatabaseTransaction,
@@ -25,6 +25,43 @@ impl TxManager for SeaOrmTxManager {
         let tx = self
             .db
             .begin()
+            .await
+            .map_err(|e| Error::Unknown(e.to_string()))?;
+        Ok(SeaOrmTxConnection { tx })
+    }
+
+    async fn begin_with_config(
+        &self,
+        isolation_level: Option<tx_context::IsolationLevel>,
+        access_mode: Option<tx_context::AccessMode>,
+    ) -> Result<Self::Tx, Error> {
+        let isolation_level = match isolation_level {
+            Some(i) => match i {
+                tx_context::IsolationLevel::RepeatableRead => {
+                    Some(sea_orm::IsolationLevel::RepeatableRead)
+                }
+                tx_context::IsolationLevel::ReadCommitted => {
+                    Some(sea_orm::IsolationLevel::ReadCommitted)
+                }
+                tx_context::IsolationLevel::ReadUncommitted => {
+                    Some(sea_orm::IsolationLevel::ReadUncommitted)
+                }
+                tx_context::IsolationLevel::Serializable => {
+                    Some(sea_orm::IsolationLevel::Serializable)
+                }
+            },
+            None => None,
+        };
+        let access_mode = match access_mode {
+            Some(a) => match a {
+                tx_context::AccessMode::ReadOnly => Some(sea_orm::AccessMode::ReadOnly),
+                tx_context::AccessMode::ReadWrite => Some(sea_orm::AccessMode::ReadWrite),
+            },
+            None => None,
+        };
+        let tx = self
+            .db
+            .begin_with_config(isolation_level, access_mode)
             .await
             .map_err(|e| Error::Unknown(e.to_string()))?;
         Ok(SeaOrmTxConnection { tx })

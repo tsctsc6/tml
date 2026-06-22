@@ -74,7 +74,12 @@ where
     R: repository::Trait<Tx = M::Tx>,
     M: app_trait::tx_context::TxManager,
 {
-    let mut tx = tx_manager.begin().await?;
+    let mut tx = tx_manager
+        .begin_with_config(
+            Some(app_trait::tx_context::IsolationLevel::Serializable),
+            None,
+        )
+        .await?;
     let owner_id = repository
         .get_music_list_owner_id(&mut tx, request.music_list_id)
         .await?;
