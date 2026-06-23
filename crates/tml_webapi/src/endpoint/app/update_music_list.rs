@@ -41,7 +41,8 @@ pub async fn handle(
             name: &request_body.name,
             user_id: claims.inner.sub,
         },
-        &tml_infrastructure::usecase::app::update_music_list::Repository::new(state.db),
+        &tml_infrastructure::usecase::app::update_music_list::Repository::new(),
+        &tml_infrastructure::tx_context::SeaOrmTxManager::new(state.db),
     )
     .await
     {
@@ -97,6 +98,12 @@ pub async fn handle(
                     return (
                         StatusCode::FORBIDDEN,
                         Json(ResponseBody::failed(Some("Permission denied".into()))),
+                    );
+                }
+                update_music_list::Error::TxError(_) => {
+                    return (
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        Json(ResponseBody::failed(None)),
                     );
                 }
             }
