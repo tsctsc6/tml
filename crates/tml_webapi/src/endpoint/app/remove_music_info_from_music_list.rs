@@ -56,9 +56,8 @@ pub async fn handle(
             music_info_id: &music_info_id,
             user_id: claims.inner.sub,
         },
-        &tml_infrastructure::usecase::app::remove_music_info_from_music_list::Repository::new(
-            state.db,
-        ),
+        &tml_infrastructure::usecase::app::remove_music_info_from_music_list::Repository::new(),
+        &tml_infrastructure::tx_context::SeaOrmTxManager::new(state.db),
     )
     .await
     {
@@ -102,6 +101,12 @@ pub async fn handle(
                         Json(ResponseBody::failed(Some("Permission denied".into()))),
                     );
                 }
+                remove_music_info_from_music_list::Error::TxError(_) =>{
+                    return (
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        Json(ResponseBody::failed(None)),
+                    );
+                },
             }
         }
     }
