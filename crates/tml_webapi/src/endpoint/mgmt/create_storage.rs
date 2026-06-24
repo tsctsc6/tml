@@ -2,7 +2,7 @@ use axum::{Json, extract::State, http::StatusCode};
 use serde::{Deserialize, Serialize};
 use tml_application::usecase::mgmt::create_storage;
 
-use crate::{app_state::AppState, extractor::Claims};
+use crate::{app_state::AppState, endpoint::UnitizedResponseBody, extractor::Claims};
 
 #[derive(Deserialize, Debug)]
 pub struct RequestBody {
@@ -11,20 +11,8 @@ pub struct RequestBody {
 }
 
 #[derive(Serialize)]
-pub struct ResponseBody {
-    pub success: bool,
-    pub message: Option<String>,
-    pub id: Option<i64>,
-}
-
-impl ResponseBody {
-    fn failed(message: Option<String>) -> ResponseBody {
-        ResponseBody {
-            success: false,
-            message,
-            id: None,
-        }
-    }
+pub struct Data {
+    pub id: i64,
 }
 
 #[axum::debug_handler]
@@ -32,10 +20,10 @@ pub async fn handle(
     State(state): State<AppState>,
     claims: Claims,
     Json(request_body): Json<RequestBody>,
-) -> (StatusCode, Json<ResponseBody>) {
+) -> (StatusCode, Json<UnitizedResponseBody<Data>>) {
     tracing::info!("Received request: {:?}", request_body);
     if !claims.inner.roles.iter().any(|role| role == "admin") {
-        return (StatusCode::FORBIDDEN, Json(ResponseBody::failed(None)));
+        return (StatusCode::FORBIDDEN, Json(UnitizedResponseBody::failed(None)));
     }
     match create_storage::handle(
         create_storage::Request {
@@ -48,11 +36,9 @@ pub async fn handle(
     {
         Ok(response) => (
             StatusCode::OK,
-            Json(ResponseBody {
-                success: true,
-                id: Some(response.id),
-                message: None,
-            }),
+            Json(UnitizedResponseBody::success(Data {
+                id: response.id,
+            })),
         ),
         Err(e) => {
             tracing::error!("Error occurred: {}", e);
@@ -61,13 +47,13 @@ pub async fn handle(
                     create_storage::validation::Error::NameTooLong => {
                         return (
                             StatusCode::OK,
-                            Json(ResponseBody::failed(Some("The name is too long".into()))),
+                            Json(UnitizedResponseBody::failed(Some("The name is too long".into()))),
                         );
                     }
                     create_storage::validation::Error::DirectoryNotExist => {
                         return (
                             StatusCode::OK,
-                            Json(ResponseBody::failed(Some(
+                            Json(UnitizedResponseBody::failed(Some(
                                 "The directory does not exist or is a file.".into(),
                             ))),
                         );
@@ -75,7 +61,7 @@ pub async fn handle(
                     create_storage::validation::Error::PathIsRelative => {
                         return (
                             StatusCode::OK,
-                            Json(ResponseBody::failed(Some("The path is relative".into()))),
+                            Json(UnitizedResponseBody::failed(Some("The path is relative".into()))),
                         );
                     }
                 },
@@ -83,7 +69,7 @@ pub async fn handle(
                     create_storage::repository::Error::NameDuplication => {
                         return (
                             StatusCode::OK,
-                            Json(ResponseBody::failed(Some(
+                            Json(UnitizedResponseBody::failed(Some(
                                 "The name is already exists".into(),
                             ))),
                         );
@@ -91,7 +77,7 @@ pub async fn handle(
                     create_storage::repository::Error::PathDuplication => {
                         return (
                             StatusCode::OK,
-                            Json(ResponseBody::failed(Some(
+                            Json(UnitizedResponseBody::failed(Some(
                                 "The path is already exists".into(),
                             ))),
                         );
@@ -99,7 +85,7 @@ pub async fn handle(
                     create_storage::repository::Error::Unknown(_) => {
                         return (
                             StatusCode::INTERNAL_SERVER_ERROR,
-                            Json(ResponseBody::failed(None)),
+                            Json(UnitizedResponseBody::failed(None)),
                         );
                     }
                 },

@@ -2,7 +2,7 @@ use axum::{Json, extract::State, http::StatusCode};
 use serde::{Deserialize, Serialize};
 use tml_application::usecase::mgmt::read_all_job;
 
-use crate::{app_state::AppState, extractor::Claims};
+use crate::{app_state::AppState, endpoint::UnitizedResponseBody, extractor::Claims};
 
 #[derive(Deserialize, Debug)]
 pub struct QueryParams {
@@ -28,23 +28,6 @@ pub struct Item {
 pub struct Data {
     pub items: Vec<Item>,
     pub next_cursor: Option<i64>,
-}
-
-#[derive(Serialize)]
-pub struct ResponseBody {
-    pub success: bool,
-    pub message: Option<String>,
-    pub data: Option<Data>,
-}
-
-impl ResponseBody {
-    fn failed(message: Option<String>) -> ResponseBody {
-        ResponseBody {
-            success: false,
-            message,
-            data: None,
-        }
-    }
 }
 
 fn parse_iso8601(s: &str) -> Result<chrono::DateTime<chrono::Utc>, String> {
@@ -74,17 +57,17 @@ pub async fn handle(
     State(state): State<AppState>,
     claims: Claims,
     axum::extract::Query(query): axum::extract::Query<QueryParams>,
-) -> (StatusCode, Json<ResponseBody>) {
+) -> (StatusCode, Json<UnitizedResponseBody<Data>>) {
     tracing::info!("Received request: {:?}", query);
     if !claims.inner.roles.iter().any(|role| role == "admin") {
-        return (StatusCode::FORBIDDEN, Json(ResponseBody::failed(None)));
+        return (StatusCode::FORBIDDEN, Json(UnitizedResponseBody::failed(None)));
     }
 
     let created_after = match query.created_after.as_deref() {
         Some(s) => match parse_iso8601(s) {
             Ok(dt) => Some(dt),
             Err(e) => {
-                return (StatusCode::OK, Json(ResponseBody::failed(Some(e))));
+                return (StatusCode::OK, Json(UnitizedResponseBody::failed(Some(e))));
             }
         },
         None => None,
@@ -94,7 +77,7 @@ pub async fn handle(
         Some(s) => match parse_iso8601(s) {
             Ok(dt) => Some(dt),
             Err(e) => {
-                return (StatusCode::OK, Json(ResponseBody::failed(Some(e))));
+                return (StatusCode::OK, Json(UnitizedResponseBody::failed(Some(e))));
             }
         },
         None => None,
@@ -113,40 +96,36 @@ pub async fn handle(
     {
         Ok(response) => (
             StatusCode::OK,
-            Json(ResponseBody {
-                success: true,
-                message: None,
-                data: Some(Data {
-                    items: response
-                        .items
-                        .into_iter()
-                        .map(|item| Item {
-                            id: item.id,
-                            job_type: format!("{:?}", item.job_type),
-                            status: format!("{:?}", item.status),
-                            success: item.success,
-                            created_at: format_iso8601(&item.created_at),
-                            completed_at: format_opt_iso8601(&item.completed_at),
-                        })
-                        .collect(),
-                    next_cursor: response.next_cursor,
-                }),
-            }),
+            Json(UnitizedResponseBody::success(Data {
+                items: response
+                    .items
+                    .into_iter()
+                    .map(|item| Item {
+                        id: item.id,
+                        job_type: format!("{:?}", item.job_type),
+                        status: format!("{:?}", item.status),
+                        success: item.success,
+                        created_at: format_iso8601(&item.created_at),
+                        completed_at: format_opt_iso8601(&item.completed_at),
+                    })
+                    .collect(),
+                next_cursor: response.next_cursor,
+            })),
         ),
         Err(e) => {
             tracing::error!("Error occurred: {}", e);
             match e {
                 read_all_job::Error::RepositoryError(_) => (
                     StatusCode::INTERNAL_SERVER_ERROR,
-                    Json(ResponseBody::failed(None)),
+                    Json(UnitizedResponseBody::failed(None)),
                 ),
                 read_all_job::Error::PageSizeOutOfRange => (
                     StatusCode::OK,
-                    Json(ResponseBody::failed(Some("Page size out of range".into()))),
+                    Json(UnitizedResponseBody::failed(Some("Page size out of range".into()))),
                 ),
                 read_all_job::Error::DateTimeOutOfRange => (
                     StatusCode::OK,
-                    Json(ResponseBody::failed(Some("Datetime out of range".into()))),
+                    Json(UnitizedResponseBody::failed(Some("Datetime out of range".into()))),
                 ),
             }
         }

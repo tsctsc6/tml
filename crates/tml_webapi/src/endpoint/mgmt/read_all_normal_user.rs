@@ -2,7 +2,7 @@ use axum::{Json, extract::State, http::StatusCode};
 use serde::{Deserialize, Serialize};
 use tml_application::usecase::mgmt::read_all_normal_user;
 
-use crate::{app_state::AppState, extractor::Claims};
+use crate::{app_state::AppState, endpoint::UnitizedResponseBody, extractor::Claims};
 
 #[derive(Deserialize, Debug)]
 pub struct QueryParams {
@@ -24,32 +24,15 @@ pub struct Data {
     pub items: Vec<Item>,
 }
 
-#[derive(Serialize)]
-pub struct ResponseBody {
-    pub success: bool,
-    pub message: Option<String>,
-    pub data: Option<Data>,
-}
-
-impl ResponseBody {
-    fn failed(message: Option<String>) -> ResponseBody {
-        ResponseBody {
-            success: false,
-            message,
-            data: None,
-        }
-    }
-}
-
 #[axum::debug_handler]
 pub async fn handle(
     State(state): State<AppState>,
     claims: Claims,
     axum::extract::Query(query): axum::extract::Query<QueryParams>,
-) -> (StatusCode, Json<ResponseBody>) {
+) -> (StatusCode, Json<UnitizedResponseBody<Data>>) {
     tracing::info!("Received request: {:?}", query);
     if !claims.inner.roles.iter().any(|role| role == "admin") {
-        return (StatusCode::FORBIDDEN, Json(ResponseBody::failed(None)));
+        return (StatusCode::FORBIDDEN, Json(UnitizedResponseBody::failed(None)));
     }
     let page_index = query.page_index.unwrap_or(0);
     let page_size = query.page_size.unwrap_or(10);
@@ -64,34 +47,30 @@ pub async fn handle(
     {
         Ok(response) => (
             StatusCode::OK,
-            Json(ResponseBody {
-                success: true,
-                message: None,
-                data: Some(Data {
-                    total: response.total,
-                    items: response
-                        .items
-                        .into_iter()
-                        .map(|item| Item {
-                            id: item.id,
-                            username: item.username,
-                            enabled: item.enabled,
-                            created_at: item.created_at,
-                        })
-                        .collect(),
-                }),
-            }),
+            Json(UnitizedResponseBody::success(Data {
+                total: response.total,
+                items: response
+                    .items
+                    .into_iter()
+                    .map(|item| Item {
+                        id: item.id,
+                        username: item.username,
+                        enabled: item.enabled,
+                        created_at: item.created_at,
+                    })
+                    .collect(),
+            })),
         ),
         Err(e) => {
             tracing::error!("Error occurred: {}", e);
             match e {
                 read_all_normal_user::Error::RepositoryError(_) => (
                     StatusCode::INTERNAL_SERVER_ERROR,
-                    Json(ResponseBody::failed(None)),
+                    Json(UnitizedResponseBody::failed(None)),
                 ),
                 read_all_normal_user::Error::PageSizeOutOfRange => (
                     StatusCode::OK,
-                    Json(ResponseBody::failed(Some("Page size out of range".into()))),
+                    Json(UnitizedResponseBody::failed(Some("Page size out of range".into()))),
                 ),
             }
         }

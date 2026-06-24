@@ -5,7 +5,7 @@ use tml_application::{
     usecase::app::search_music_info,
 };
 
-use crate::{app_state::AppState, extractor::Claims};
+use crate::{app_state::AppState, endpoint::UnitizedResponseBody, extractor::Claims};
 
 #[derive(Deserialize, Debug)]
 pub struct QueryParams {
@@ -38,32 +38,15 @@ pub struct Data {
     pub items: SearchResults<Item>,
 }
 
-#[derive(Serialize)]
-pub struct ResponseBody {
-    pub success: bool,
-    pub message: Option<String>,
-    pub data: Option<Data>,
-}
-
-impl ResponseBody {
-    fn failed(message: Option<String>) -> ResponseBody {
-        ResponseBody {
-            success: false,
-            message,
-            data: None,
-        }
-    }
-}
-
 #[axum::debug_handler]
 pub async fn handle(
     State(state): State<AppState>,
     claims: Claims,
     axum::extract::Query(query): axum::extract::Query<QueryParams>,
-) -> (StatusCode, Json<ResponseBody>) {
+) -> (StatusCode, Json<UnitizedResponseBody<Data>>) {
     tracing::info!("Received request: {:?}", query);
     if !claims.inner.roles.iter().any(|role| role == "normal-user") {
-        return (StatusCode::FORBIDDEN, Json(ResponseBody::failed(None)));
+        return (StatusCode::FORBIDDEN, Json(UnitizedResponseBody::failed(None)));
     }
 
     match search_music_info::handle(
@@ -98,37 +81,33 @@ pub async fn handle(
     {
         Ok(response) => (
             StatusCode::OK,
-            Json(ResponseBody {
-                success: true,
-                message: None,
-                data: Some(Data {
-                    items: SearchResults::<Item> {
-                        hits: response
-                            .results
-                            .hits
-                            .into_iter()
-                            .map(|x| SearchResult::<Item> {
-                                result: Item {
-                                    id: x.result.id,
-                                    title: x.result.title,
-                                    artists: x.result.artists,
-                                    album_title: x.result.album_title,
-                                },
-                                matches_position: x.matches_position,
-                            })
-                            .collect(),
-                        page: response.results.page,
-                        total_hits: response.results.total_hits,
-                        total_pages: response.results.total_pages,
-                    },
-                }),
-            }),
+            Json(UnitizedResponseBody::success(Data {
+                items: SearchResults::<Item> {
+                    hits: response
+                        .results
+                        .hits
+                        .into_iter()
+                        .map(|x| SearchResult::<Item> {
+                            result: Item {
+                                id: x.result.id,
+                                title: x.result.title,
+                                artists: x.result.artists,
+                                album_title: x.result.album_title,
+                            },
+                            matches_position: x.matches_position,
+                        })
+                        .collect(),
+                    page: response.results.page,
+                    total_hits: response.results.total_hits,
+                    total_pages: response.results.total_pages,
+                },
+            })),
         ),
         Err(e) => {
             tracing::error!("Error occurred: {}", e);
             (
                 StatusCode::INTERNAL_SERVER_ERROR,
-                Json(ResponseBody::failed(None)),
+                Json(UnitizedResponseBody::failed(None)),
             )
         }
     }

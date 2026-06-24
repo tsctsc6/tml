@@ -2,7 +2,7 @@ use axum::{Json, extract::State, http::StatusCode};
 use serde::Deserialize;
 use tml_application::usecase::app::change_music_info_order_in_music_list;
 
-use crate::{app_state::AppState, extractor::Claims};
+use crate::{app_state::AppState, endpoint::UnitizedResponseBody, extractor::Claims};
 
 #[derive(Deserialize, Debug)]
 pub struct RequestBody {
@@ -14,29 +14,17 @@ pub struct RequestBody {
 }
 
 #[derive(serde::Serialize)]
-pub struct ResponseBody {
-    pub success: bool,
-    pub message: Option<String>,
-}
-
-impl ResponseBody {
-    fn failed(message: Option<String>) -> ResponseBody {
-        ResponseBody {
-            success: false,
-            message,
-        }
-    }
-}
+pub struct Data {}
 
 #[axum::debug_handler]
 pub async fn handle(
     State(state): State<AppState>,
     claims: Claims,
     Json(request_body): Json<RequestBody>,
-) -> (StatusCode, Json<ResponseBody>) {
+) -> (StatusCode, Json<UnitizedResponseBody<Data>>) {
     tracing::info!("Received request: {:?}", request_body);
     if !claims.inner.roles.iter().any(|role| role == "normal-user") {
-        return (StatusCode::FORBIDDEN, Json(ResponseBody::failed(None)));
+        return (StatusCode::FORBIDDEN, Json(UnitizedResponseBody::failed(None)));
     }
 
     // Decode hex music_info_id
@@ -45,7 +33,7 @@ pub async fn handle(
         Err(_) => {
             return (
                 StatusCode::OK,
-                Json(ResponseBody::failed(Some(
+                Json(UnitizedResponseBody::failed(Some(
                     "Invalid music_info_id hex".into(),
                 ))),
             );
@@ -59,7 +47,7 @@ pub async fn handle(
             Err(_) => {
                 return (
                     StatusCode::OK,
-                    Json(ResponseBody::failed(Some(
+                    Json(UnitizedResponseBody::failed(Some(
                         "Invalid prev_music_info_id hex".into(),
                     ))),
                 );
@@ -82,10 +70,7 @@ pub async fn handle(
     {
         Ok(_) => (
             StatusCode::OK,
-            Json(ResponseBody {
-                success: true,
-                message: None,
-            }),
+            Json(UnitizedResponseBody::success(Data {})),
         ),
         Err(e) => {
             tracing::error!("Error occurred: {}", e);
@@ -95,7 +80,7 @@ pub async fn handle(
                         change_music_info_order_in_music_list::repository::Error::MusicListNotFound => {
                             return (
                                 StatusCode::OK,
-                                Json(ResponseBody::failed(Some(
+                                Json(UnitizedResponseBody::failed(Some(
                                     "The music list is not found".into(),
                                 ))),
                             );
@@ -103,7 +88,7 @@ pub async fn handle(
                         change_music_info_order_in_music_list::repository::Error::MusicInfoNotInMusicList => {
                             return (
                                 StatusCode::OK,
-                                Json(ResponseBody::failed(Some(
+                                Json(UnitizedResponseBody::failed(Some(
                                     "The music info is not in the music list".into(),
                                 ))),
                             );
@@ -111,7 +96,7 @@ pub async fn handle(
                         change_music_info_order_in_music_list::repository::Error::Unknown(_) => {
                             return (
                                 StatusCode::INTERNAL_SERVER_ERROR,
-                                Json(ResponseBody::failed(None)),
+                                Json(UnitizedResponseBody::failed(None)),
                             );
                         }
                     }
@@ -119,19 +104,19 @@ pub async fn handle(
                 change_music_info_order_in_music_list::Error::PermissionDenied => {
                     return (
                         StatusCode::FORBIDDEN,
-                        Json(ResponseBody::failed(Some("Permission denied".into()))),
+                        Json(UnitizedResponseBody::failed(Some("Permission denied".into()))),
                     );
                 }
                 change_music_info_order_in_music_list::Error::DecodeError(_) => {
                     return (
                         StatusCode::INTERNAL_SERVER_ERROR,
-                        Json(ResponseBody::failed(None)),
+                        Json(UnitizedResponseBody::failed(None)),
                     );
                 }
                 change_music_info_order_in_music_list::Error::InvalidReorder => {
                     return (
                         StatusCode::OK,
-                        Json(ResponseBody::failed(Some(
+                        Json(UnitizedResponseBody::failed(Some(
                             "Invalid reorder: cannot place item at the specified position".into(),
                         ))),
                     );
@@ -139,7 +124,7 @@ pub async fn handle(
                 change_music_info_order_in_music_list::Error::TxError(_) => {
                     return (
                         StatusCode::INTERNAL_SERVER_ERROR,
-                        Json(ResponseBody::failed(None)),
+                        Json(UnitizedResponseBody::failed(None)),
                     );
                 },
             }

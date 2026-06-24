@@ -2,7 +2,7 @@ use axum::{Json, extract::State, http::StatusCode};
 use serde::{Deserialize, Serialize};
 use tml_application::usecase::app::read_all_music_info_from_music_list;
 
-use crate::{app_state::AppState, extractor::Claims};
+use crate::{app_state::AppState, endpoint::UnitizedResponseBody, extractor::Claims};
 
 #[derive(Deserialize, Debug)]
 pub struct QueryParams {
@@ -34,32 +34,15 @@ pub struct Data {
     pub next_cursor: Option<String>,
 }
 
-#[derive(Serialize)]
-pub struct ResponseBody {
-    pub success: bool,
-    pub message: Option<String>,
-    pub data: Option<Data>,
-}
-
-impl ResponseBody {
-    fn failed(message: Option<String>) -> ResponseBody {
-        ResponseBody {
-            success: false,
-            message,
-            data: None,
-        }
-    }
-}
-
 #[axum::debug_handler]
 pub async fn handle(
     State(state): State<AppState>,
     claims: Claims,
     axum::extract::Query(query): axum::extract::Query<QueryParams>,
-) -> (StatusCode, Json<ResponseBody>) {
+) -> (StatusCode, Json<UnitizedResponseBody<Data>>) {
     tracing::info!("Received request: {:?}", query);
     if !claims.inner.roles.iter().any(|role| role == "normal-user") {
-        return (StatusCode::FORBIDDEN, Json(ResponseBody::failed(None)));
+        return (StatusCode::FORBIDDEN, Json(UnitizedResponseBody::failed(None)));
     }
 
     // Decode hex cursor
@@ -69,7 +52,7 @@ pub async fn handle(
             Err(_) => {
                 return (
                     StatusCode::OK,
-                    Json(ResponseBody::failed(Some("Invalid cursor hex".into()))),
+                    Json(UnitizedResponseBody::failed(Some("Invalid cursor hex".into()))),
                 );
             }
         },
@@ -109,11 +92,7 @@ pub async fn handle(
             let next_cursor = response.next_cursor.map(|c| hex::encode(&c));
             (
                 StatusCode::OK,
-                Json(ResponseBody {
-                    success: true,
-                    message: None,
-                    data: Some(Data { items, next_cursor }),
-                }),
+                Json(UnitizedResponseBody::success(Data { items, next_cursor })),
             )
         }
         Err(e) => {
@@ -123,7 +102,7 @@ pub async fn handle(
                     read_all_music_info_from_music_list::repository::Error::MusicListNotFound => {
                         return (
                             StatusCode::OK,
-                            Json(ResponseBody::failed(Some(
+                            Json(UnitizedResponseBody::failed(Some(
                                 "The music list is not found".into(),
                             ))),
                         );
@@ -131,20 +110,20 @@ pub async fn handle(
                     read_all_music_info_from_music_list::repository::Error::Unknown(_) => {
                         return (
                             StatusCode::INTERNAL_SERVER_ERROR,
-                            Json(ResponseBody::failed(None)),
+                            Json(UnitizedResponseBody::failed(None)),
                         );
                     }
                 },
                 read_all_music_info_from_music_list::Error::PermissionDenied => {
                     return (
                         StatusCode::FORBIDDEN,
-                        Json(ResponseBody::failed(Some("Permission denied".into()))),
+                        Json(UnitizedResponseBody::failed(Some("Permission denied".into()))),
                     );
                 }
                 read_all_music_info_from_music_list::Error::PageSizeOutOfRange => {
                     return (
                         StatusCode::OK,
-                        Json(ResponseBody::failed(Some("Page size out of range".into()))),
+                        Json(UnitizedResponseBody::failed(Some("Page size out of range".into()))),
                     );
                 }
             }
