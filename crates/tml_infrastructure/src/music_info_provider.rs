@@ -4,7 +4,8 @@ use lofty::{
     file::{AudioFile, TaggedFileExt},
     probe::Probe,
 };
-use tml_application::app_trait::music_info_provider::MusicInfo;
+use path_slash::PathExt;
+use tml_application::app_trait::music_info_provider::{MusicInfo, MusicInfoHash};
 use walkdir::WalkDir;
 use xxhash_rust::xxh3::xxh3_128;
 
@@ -50,10 +51,7 @@ impl MusicInfoProvider {
         &self,
         base_path: &str,
         entry: Result<walkdir::DirEntry, walkdir::Error>,
-    ) -> Option<(
-        Vec<u8>,
-        tml_application::app_trait::music_info_provider::MusicInfo,
-    )> {
+    ) -> Option<MusicInfo> {
         let entry = match entry {
             Ok(e) => e,
             Err(e) => {
@@ -79,28 +77,22 @@ impl MusicInfoProvider {
         &self,
         base_path: &str,
         entry: &walkdir::DirEntry,
-    ) -> Result<
-        (
-            Vec<u8>,
-            tml_application::app_trait::music_info_provider::MusicInfo,
-        ),
-        Error,
-    > {
+    ) -> Result<MusicInfo, Error> {
         let path = entry.path();
-        tracing::debug!("Checking: {}", path.to_string_lossy());
+        tracing::debug!("Checking: {}", path.to_slash_lossy());
         if path.is_dir() {
-            tracing::debug!("Skiped: {}", path.to_string_lossy());
+            tracing::debug!("Skiped: {}", path.to_slash_lossy());
             Err(Error::Skiped)?;
         }
         let extension = path.extension().and_then(OsStr::to_str);
         if extension != Some("flac") && extension != Some("mp3") {
-            tracing::debug!("Skiped: {}", path.to_string_lossy());
+            tracing::debug!("Skiped: {}", path.to_slash_lossy());
             Err(Error::Skiped)?;
         }
         // base_path is the argument of WalkDir::new(path), so it shoud not failed.
-        let relative_path = path.strip_prefix(base_path).unwrap().to_string_lossy();
+        let relative_path = path.strip_prefix(base_path).unwrap().to_slash_lossy();
 
-        tracing::trace!("Path: {}", entry.path().display());
+        tracing::trace!("Path: {}", entry.path().to_slash_lossy());
         let tagged_file = Probe::open(entry.path())?.guess_file_type()?.read()?;
         let tag = tagged_file.primary_tag().ok_or(TagError::GetTag)?;
         let artist = tag
@@ -132,7 +124,7 @@ impl MusicInfoProvider {
         let channels = properties.channels().unwrap_or(0);
         let bit_depth = properties.bit_depth().unwrap_or(0);
         let audio_bitrate = properties.audio_bitrate().unwrap_or(0);
-        let music_info = MusicInfo {
+        let music_info_hash = MusicInfoHash {
             title: title.into(),
             artists: artist.split(" & ").map(|x| x.to_string()).collect(),
             album_title: album_title.into(),
@@ -141,10 +133,9 @@ impl MusicInfoProvider {
             sample_rate: i32::try_from(sample_rate)?,
             channels: channels.into(),
             bit_depth: bit_depth.into(),
-            file_path: relative_path.into(),
         };
         // order the keies
-        let json_value = serde_json::to_value(&music_info)?;
+        let json_value = serde_json::to_value(&music_info_hash)?;
         // json_value is form last line, so it shoud not failed.
         let sorted_map: BTreeMap<String, serde_json::Value> =
             serde_json::from_value(json_value).unwrap();
@@ -152,20 +143,23 @@ impl MusicInfoProvider {
         tracing::trace!("{}", json);
         let hash_128 = xxh3_128(json.as_bytes());
         tracing::trace!("{:0>32X}", hash_128);
-        return Ok((hash_128.to_be_bytes().to_vec(), music_info));
+        return Ok(MusicInfo {
+            id: hash_128.to_be_bytes().to_vec(),
+            title: music_info_hash.title,
+            artists: music_info_hash.artists,
+            album_title: music_info_hash.album_title,
+            track_number: music_info_hash.track_number,
+            audio_bitrate: music_info_hash.audio_bitrate,
+            sample_rate: music_info_hash.sample_rate,
+            channels: music_info_hash.channels,
+            bit_depth: music_info_hash.bit_depth,
+            file_path: relative_path.into(),
+        });
     }
 }
 
 impl tml_application::app_trait::music_info_provider::Trait for MusicInfoProvider {
-    fn scan(
-        &self,
-        path: &str,
-    ) -> impl Iterator<
-        Item = (
-            Vec<u8>,
-            tml_application::app_trait::music_info_provider::MusicInfo,
-        ),
-    > + Send {
+    fn scan(&self, path: &str) -> impl Iterator<Item = MusicInfo> + Send {
         return WalkDir::new(path)
             .into_iter()
             .filter_map(|x| self.map_to_music_info(path, x));
