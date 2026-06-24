@@ -13,7 +13,7 @@ pub struct RequestBody {
 }
 
 #[derive(Serialize)]
-pub struct ResponseBody {
+pub struct Data {
     pub token: String,
 }
 
@@ -21,7 +21,7 @@ pub struct ResponseBody {
 pub async fn handle(
     State(state): State<AppState>,
     Json(request_body): Json<RequestBody>,
-) -> (StatusCode, Json<UnitizedResponseBody<ResponseBody>>) {
+) -> (StatusCode, Json<UnitizedResponseBody<Data>>) {
     tracing::info!("Received request: {}", request_body.username);
     match login::handle(
         login::Request {
@@ -39,7 +39,7 @@ pub async fn handle(
     {
         Ok(response) => (
             StatusCode::OK,
-            Json(UnitizedResponseBody::success(ResponseBody {
+            Json(UnitizedResponseBody::success(Data {
                 token: response.token,
             })),
         ),

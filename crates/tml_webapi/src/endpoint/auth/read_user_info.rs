@@ -2,7 +2,7 @@ use axum::{Json, extract::State, http::StatusCode};
 use serde::Serialize;
 use tml_application::usecase::auth::read_user_info;
 
-use crate::{app_state::AppState, extractor::Claims};
+use crate::{app_state::AppState, endpoint::UnitizedResponseBody, extractor::Claims};
 
 #[derive(Serialize)]
 pub struct Data {
@@ -13,28 +13,11 @@ pub struct Data {
     pub roles: Vec<String>,
 }
 
-#[derive(Serialize)]
-pub struct ResponseBody {
-    pub success: bool,
-    pub message: Option<String>,
-    pub data: Option<Data>,
-}
-
-impl ResponseBody {
-    fn failed(message: Option<String>) -> ResponseBody {
-        ResponseBody {
-            success: false,
-            message,
-            data: None,
-        }
-    }
-}
-
 #[axum::debug_handler]
 pub async fn handle(
     State(state): State<AppState>,
     claims: Claims,
-) -> (StatusCode, Json<ResponseBody>) {
+) -> (StatusCode, Json<UnitizedResponseBody<Data>>) {
     tracing::info!(
         "Received request: read_user_info for user_id={}",
         claims.inner.sub
@@ -49,24 +32,20 @@ pub async fn handle(
     {
         Ok(response) => (
             StatusCode::OK,
-            Json(ResponseBody {
-                success: true,
-                message: None,
-                data: Some(Data {
-                    id: response.id,
-                    username: response.username,
-                    enabled: response.enabled,
-                    created_at: response.created_at,
-                    roles: response.roles,
-                }),
-            }),
+            Json(UnitizedResponseBody::success(Data {
+                id: response.id,
+                username: response.username,
+                enabled: response.enabled,
+                created_at: response.created_at,
+                roles: response.roles,
+            })),
         ),
         Err(e) => {
             tracing::error!("Error occurred: {}", e);
             match e {
                 read_user_info::Error::RepositoryError(_) => (
                     StatusCode::INTERNAL_SERVER_ERROR,
-                    Json(ResponseBody::failed(None)),
+                    Json(UnitizedResponseBody::failed(None)),
                 ),
             }
         }

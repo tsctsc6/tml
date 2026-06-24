@@ -14,7 +14,7 @@ pub struct UnitizedResponseBody<T> {
 impl<T> UnitizedResponseBody<T> {
     pub fn success(data: T) -> UnitizedResponseBody<T> {
         UnitizedResponseBody {
-            success: false,
+            success: true,
             message: None,
             data: Some(data),
         }
