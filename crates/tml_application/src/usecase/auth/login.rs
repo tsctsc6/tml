@@ -26,7 +26,7 @@ pub struct Request<'a> {
 }
 
 pub struct Response {
-    pub token: Option<String>,
+    pub token: String,
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -59,5 +59,5 @@ pub async fn handle(
         security_stamp: user.security_stamp,
     };
     let token = jwt_manager.create_token(claims)?;
-    Ok(Response { token: Some(token) })
+    Ok(Response { token })
 }

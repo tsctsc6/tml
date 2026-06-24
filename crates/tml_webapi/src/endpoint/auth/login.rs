@@ -4,6 +4,7 @@ use tml_application::app_trait;
 use tml_application::usecase::auth::login;
 
 use crate::AppState;
+use crate::endpoint::UnitizedResponseBody;
 
 #[derive(Deserialize)]
 pub struct RequestBody {
@@ -13,26 +14,14 @@ pub struct RequestBody {
 
 #[derive(Serialize)]
 pub struct ResponseBody {
-    pub success: bool,
-    pub message: Option<String>,
-    pub token: Option<String>,
-}
-
-impl ResponseBody {
-    fn default() -> ResponseBody {
-        ResponseBody {
-            success: false,
-            message: None,
-            token: None,
-        }
-    }
+    pub token: String,
 }
 
 #[axum::debug_handler]
 pub async fn handle(
     State(state): State<AppState>,
     Json(request_body): Json<RequestBody>,
-) -> (StatusCode, Json<ResponseBody>) {
+) -> (StatusCode, Json<UnitizedResponseBody<ResponseBody>>) {
     tracing::info!("Received request: {}", request_body.username);
     match login::handle(
         login::Request {
@@ -50,11 +39,9 @@ pub async fn handle(
     {
         Ok(response) => (
             StatusCode::OK,
-            Json(ResponseBody {
-                success: true,
-                message: None,
+            Json(UnitizedResponseBody::success(ResponseBody {
                 token: response.token,
-            }),
+            })),
         ),
         Err(e) => {
             tracing::error!("Error occurred: {}", e);
@@ -63,11 +50,7 @@ pub async fn handle(
                     if let login::repository::Error::UserNotFound = error {
                         return (
                             StatusCode::OK,
-                            Json(ResponseBody {
-                                success: false,
-                                message: Some("User not found".into()),
-                                token: None,
-                            }),
+                            Json(UnitizedResponseBody::failed(Some("User not found".into()))),
                         );
                     }
                 }
@@ -75,29 +58,23 @@ pub async fn handle(
                     if let app_trait::password_hasher::Error::InvalidPassword = error {
                         return (
                             StatusCode::OK,
-                            Json(ResponseBody {
-                                success: false,
-                                message: Some("Invalid password".into()),
-                                token: None,
-                            }),
+                            Json(UnitizedResponseBody::failed(Some(
+                                "Invalid password".into(),
+                            ))),
                         );
                     }
                 }
                 login::Error::UserDisabled => {
                     return (
                         StatusCode::OK,
-                        Json(ResponseBody {
-                            success: false,
-                            message: Some("User disabled".into()),
-                            token: None,
-                        }),
+                        Json(UnitizedResponseBody::failed(Some("User disabled".into()))),
                     );
                 }
                 _ => (),
             }
             (
                 StatusCode::INTERNAL_SERVER_ERROR,
-                Json(ResponseBody::default()),
+                Json(UnitizedResponseBody::failed(None)),
             )
         }
     }
