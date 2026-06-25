@@ -14,6 +14,7 @@
   } from "carbon-components-svelte";
   import TrashCan from "carbon-icons-svelte/lib/TrashCan.svelte";
   import Add from "carbon-icons-svelte/lib/Add.svelte";
+  import CloudDownload from "carbon-icons-svelte/lib/CloudDownload.svelte";
   import { apiClientExt } from "../../lib/api";
 
   let queue: NotificationQueue;
@@ -242,8 +243,12 @@
   <DataTable title="Users" {headers} {rows} on:click:row={handleRowClick}>
     <Toolbar>
       <ToolbarContent>
-        <Button icon={Add} iconDescription="Add" on:click={openAddModal}
-        ></Button>
+        <Button
+          icon={CloudDownload}
+          iconDescription="Refresh"
+          on:click={() => fetchData(page, pageSize)}
+        />
+        <Button icon={Add} iconDescription="Add" on:click={openAddModal} />
       </ToolbarContent>
     </Toolbar>
     <svelte:fragment slot="cell" let:cell let:row>
