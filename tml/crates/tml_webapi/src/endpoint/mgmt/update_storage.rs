@@ -22,7 +22,10 @@ pub async fn handle(
 ) -> (StatusCode, Json<UnitizedResponseBody<Data>>) {
     tracing::info!("Received request: {:?}", request_body);
     if !claims.inner.roles.iter().any(|role| role == "admin") {
-        return (StatusCode::FORBIDDEN, Json(UnitizedResponseBody::failed(None)));
+        return (
+            StatusCode::FORBIDDEN,
+            Json(UnitizedResponseBody::failed(None)),
+        );
     }
     match update_storage::handle(
         update_storage::Request {
@@ -34,10 +37,7 @@ pub async fn handle(
     )
     .await
     {
-        Ok(_) => (
-            StatusCode::OK,
-            Json(UnitizedResponseBody::success(Data {})),
-        ),
+        Ok(_) => (StatusCode::OK, Json(UnitizedResponseBody::success(Data {}))),
         Err(e) => {
             tracing::error!("Error occurred: {}", e);
             match e {
@@ -45,13 +45,25 @@ pub async fn handle(
                     update_storage::validation::Error::NameTooLong => {
                         return (
                             StatusCode::OK,
-                            Json(UnitizedResponseBody::failed(Some("The name is too long".into()))),
+                            Json(UnitizedResponseBody::failed(Some(
+                                "The name is too long".into(),
+                            ))),
                         );
                     }
-                    update_storage::validation::Error::InvalidPath => {
+                    update_storage::validation::Error::DirectoryNotExist => {
                         return (
                             StatusCode::OK,
-                            Json(UnitizedResponseBody::failed(Some("The path is invalid".into()))),
+                            Json(UnitizedResponseBody::failed(Some(
+                                "The directory does not exist or is a file.".into(),
+                            ))),
+                        );
+                    }
+                    update_storage::validation::Error::PathIsRelative => {
+                        return (
+                            StatusCode::OK,
+                            Json(UnitizedResponseBody::failed(Some(
+                                "The path is relative".into(),
+                            ))),
                         );
                     }
                 },
