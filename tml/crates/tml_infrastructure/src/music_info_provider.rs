@@ -5,9 +5,22 @@ use lofty::{
     probe::Probe,
 };
 use path_slash::PathExt;
-use tml_application::app_trait::music_info_provider::{MusicInfo, MusicInfoHash};
+use serde::Serialize;
+use tml_application::app_trait::music_info_provider::MusicInfo;
 use walkdir::WalkDir;
 use xxhash_rust::xxh3::xxh3_128;
+
+#[derive(Serialize, Clone)]
+pub struct MusicInfoHash {
+    pub title: String,
+    pub artists: Vec<String>,
+    pub album_title: String,
+    pub track_number: i32,
+    pub audio_bitrate: i32,
+    pub sample_rate: i32,
+    pub channels: i16,
+    pub bit_depth: i16,
+}
 
 #[derive(Clone)]
 pub struct MusicInfoProvider;
