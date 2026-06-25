@@ -1,9 +1,14 @@
 <script lang="ts">
-  import { Column, Grid, Row } from "carbon-components-svelte";
+  import {
+    Column,
+    Grid,
+    NotificationQueue,
+    Row,
+  } from "carbon-components-svelte";
   import Login from "./Login.svelte";
   import UserProfile from "./UserProfile.svelte";
   import { onMount } from "svelte";
-  import apiClient from "../../lib/api";
+  import { apiClientExt } from "../../lib/api";
 
   interface ReadUserInfoResponse {
     username: string;
@@ -11,23 +16,29 @@
   }
 
   let isLoggedIn = false;
+  let queue: NotificationQueue;
 
   onMount(async () => {
     try {
-      const response = await apiClient.get<ReadUserInfoResponse>(
+      const response = await apiClientExt.get<ReadUserInfoResponse>(
         "/auth/read_user_info",
       );
-      console.log("User info:", response);
+      if (!response.success) {
+        throw new Error(response.message ?? "");
+      }
       isLoggedIn = true;
     } catch (error: any) {
-      if (error.response) {
-        if (error.response.status === 401) {
-          isLoggedIn = false;
-        }
-      }
+      queue.add({
+        kind: "error",
+        title: "Error",
+        subtitle: error.toString(),
+        timeout: 3000,
+      });
     }
   });
 </script>
+
+<NotificationQueue bind:this={queue} />
 
 <Grid>
   <Row>

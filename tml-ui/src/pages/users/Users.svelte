@@ -10,10 +10,13 @@
     Toolbar,
     ToolbarContent,
     PasswordInput,
+    NotificationQueue,
   } from "carbon-components-svelte";
   import TrashCan from "carbon-icons-svelte/lib/TrashCan.svelte";
   import Add from "carbon-icons-svelte/lib/Add.svelte";
-  import apiClient from "../../lib/api";
+  import { apiClientExt } from "../../lib/api";
+
+  let queue: NotificationQueue;
 
   interface ReadAllNormalUserResponse {
     total: number;
@@ -49,13 +52,21 @@
   async function fetchData(currentPage: number, currentPageSize: number) {
     loading = true;
     try {
-      const response = await apiClient.get<ReadAllNormalUserResponse>(
+      const response = await apiClientExt.get<ReadAllNormalUserResponse>(
         `/mgmt/read_all_normal_user?page_index=${currentPage - 1}&page_size=${currentPageSize}`,
       );
+      if (!response.success || !response.data) {
+        throw new Error(response.message ?? "");
+      }
       rows = response.data.items;
       totalItems = response.data.total;
-    } catch (error) {
-      console.error("Raad all users failed:", error);
+    } catch (error: any) {
+      queue.add({
+        kind: "error",
+        title: "Error",
+        subtitle: error.toString(),
+        timeout: 3000,
+      });
     } finally {
       loading = false;
     }
@@ -99,10 +110,13 @@
         username: editingItem.username,
         enabled: editingItem.enabled,
       };
-      const response = await apiClient.post<UpdateNormalUserResponse>(
+      const response = await apiClientExt.post<UpdateNormalUserResponse>(
         "/mgmt/update_normal_user",
         updateNormalUserRequest,
       );
+      if (!response.success || !response.data) {
+        throw new Error(response.message ?? "");
+      }
       isEditingModalOpen = false;
 
       // Update row in datatable
@@ -113,8 +127,13 @@
         }
         return item;
       });
-    } catch (error) {
-      console.error("Update user failed:", error);
+    } catch (error: any) {
+      queue.add({
+        kind: "error",
+        title: "Error",
+        subtitle: error.toString(),
+        timeout: 3000,
+      });
     } finally {
       isEditingSubmitting = false;
     }
@@ -145,14 +164,22 @@
       const deleteNormalUserRequest: DeleteNormalUserRequest = {
         id: itemToDelete.id,
       };
-      const response = await apiClient.post<DeleteNormalUserResponse>(
+      const response = await apiClientExt.post<DeleteNormalUserResponse>(
         "/mgmt/delete_normal_user",
         deleteNormalUserRequest,
       );
+      if (!response.success || !response.data) {
+        throw new Error(response.message ?? "");
+      }
       rows = rows.filter((item) => item.id !== itemToDelete!.id);
       isDeleteModalOpen = false;
-    } catch (error) {
-      console.error("Delete user failed:", error);
+    } catch (error: any) {
+      queue.add({
+        kind: "error",
+        title: "Error",
+        subtitle: error.toString(),
+        timeout: 3000,
+      });
     } finally {
       isDeleting = false;
       itemToDelete = null;
@@ -185,19 +212,29 @@
   async function submitCreate() {
     isCreating = true;
     try {
-      const response = await apiClient.post<CreateNormalUserResponse>(
+      const response = await apiClientExt.post<CreateNormalUserResponse>(
         "/mgmt/create_normal_user",
         itemToCreate,
       );
+      if (!response.success || !response.data) {
+        throw new Error(response.message ?? "");
+      }
       fetchData(page, pageSize);
-    } catch (error) {
-      console.error("Create user failed:", error);
+    } catch (error: any) {
+      queue.add({
+        kind: "error",
+        title: "Error",
+        subtitle: error.toString(),
+        timeout: 3000,
+      });
     } finally {
       isCreating = false;
       isCreateModalOpen = false;
     }
   }
 </script>
+
+<NotificationQueue bind:this={queue} />
 
 {#if loading}
   <DataTableSkeleton {headers} rows={pageSize} />

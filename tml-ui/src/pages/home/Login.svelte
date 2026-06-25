@@ -4,11 +4,14 @@
     Column,
     Form,
     Grid,
+    NotificationQueue,
     PasswordInput,
     Row,
     TextInput,
   } from "carbon-components-svelte";
-  import apiClient from "../../lib/api";
+  import { apiClientExt } from "../../lib/api";
+
+  let queue: NotificationQueue;
 
   interface LoginRequest {
     username: string;
@@ -24,19 +27,32 @@
 
   async function handleFormSubmit(e: SubmitEvent): Promise<void> {
     e.preventDefault();
-    const loginRequest: LoginRequest = { username, password };
-    const response = await apiClient.post<LoginResponse>(
-      "/auth/login",
-      loginRequest,
-    );
-    console.log("Login result:", response);
-    if (typeof window === "undefined") {
-      return;
+    try {
+      const loginRequest: LoginRequest = { username, password };
+      const response = await apiClientExt.post<LoginResponse>(
+        "/auth/login",
+        loginRequest,
+      );
+      if (typeof window === "undefined") {
+        return;
+      }
+      if (!response.success || !response.data) {
+        throw new Error(response.message ?? "");
+      }
+      localStorage.setItem("token", response.data.token);
+      window.location.reload();
+    } catch (error: any) {
+      queue.add({
+        kind: "error",
+        title: "Error",
+        subtitle: error.toString(),
+        timeout: 3000,
+      });
     }
-    localStorage.setItem("token", response.data.token);
-    window.location.reload();
   }
 </script>
+
+<NotificationQueue bind:this={queue} />
 
 <Grid>
   <Row>
