@@ -5,4 +5,5 @@ pub mod jwt_manager;
 pub mod music_info_provider;
 pub mod password_hasher;
 pub mod search_engine;
+pub mod tx_context;
 pub mod usecase;

@@ -2,7 +2,7 @@ use axum::{Json, extract::State, http::StatusCode};
 use serde::{Deserialize, Serialize};
 use tml_application::usecase::auth::register;
 
-use crate::AppState;
+use crate::{AppState, endpoint::UnitizedResponseBody};
 
 #[derive(Deserialize)]
 pub struct RequestBody {
@@ -11,27 +11,15 @@ pub struct RequestBody {
 }
 
 #[derive(Serialize)]
-pub struct ResponseBody {
-    pub success: bool,
-    pub message: Option<String>,
-    pub id: Option<i64>,
-}
-
-impl ResponseBody {
-    fn default() -> ResponseBody {
-        ResponseBody {
-            success: false,
-            message: None,
-            id: None,
-        }
-    }
+pub struct Data {
+    pub id: i64,
 }
 
 #[axum::debug_handler]
 pub async fn handle(
     State(state): State<AppState>,
     Json(request_body): Json<RequestBody>,
-) -> (StatusCode, Json<ResponseBody>) {
+) -> (StatusCode, Json<UnitizedResponseBody<Data>>) {
     tracing::info!("Received request: {}", request_body.username);
     match register::handle(
         register::Request {
@@ -45,11 +33,7 @@ pub async fn handle(
     {
         Ok(response) => (
             StatusCode::OK,
-            Json(ResponseBody {
-                success: true,
-                id: Some(response.id),
-                message: None,
-            }),
+            Json(UnitizedResponseBody::success(Data { id: response.id })),
         ),
         Err(e) => {
             tracing::error!("Error occurred: {}", e);
@@ -57,17 +41,15 @@ pub async fn handle(
                 if let register::repository::Error::UsernameDuplication = error {
                     return (
                         StatusCode::OK,
-                        Json(ResponseBody {
-                            success: false,
-                            message: Some("User already exists".into()),
-                            id: None,
-                        }),
+                        Json(UnitizedResponseBody::failed(Some(
+                            "User already exists".into(),
+                        ))),
                     );
                 }
             }
             (
                 StatusCode::INTERNAL_SERVER_ERROR,
-                Json(ResponseBody::default()),
+                Json(UnitizedResponseBody::failed(None)),
             )
         }
     }

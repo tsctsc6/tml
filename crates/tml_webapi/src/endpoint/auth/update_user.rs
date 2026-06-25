@@ -2,7 +2,7 @@ use axum::{Json, extract::State, http::StatusCode};
 use serde::Deserialize;
 use tml_application::usecase::auth::update_user;
 
-use crate::{app_state::AppState, extractor::Claims};
+use crate::{app_state::AppState, endpoint::UnitizedResponseBody, extractor::Claims};
 
 #[derive(Deserialize, Debug)]
 pub struct RequestBody {
@@ -11,26 +11,14 @@ pub struct RequestBody {
 }
 
 #[derive(serde::Serialize)]
-pub struct ResponseBody {
-    pub success: bool,
-    pub message: Option<String>,
-}
-
-impl ResponseBody {
-    fn failed(message: Option<String>) -> ResponseBody {
-        ResponseBody {
-            success: false,
-            message,
-        }
-    }
-}
+pub struct Data {}
 
 #[axum::debug_handler]
 pub async fn handle(
     State(state): State<AppState>,
     claims: Claims,
     Json(request_body): Json<RequestBody>,
-) -> (StatusCode, Json<ResponseBody>) {
+) -> (StatusCode, Json<UnitizedResponseBody<Data>>) {
     tracing::info!(
         "Received request: update_user for user_id={}",
         claims.inner.sub
@@ -49,13 +37,7 @@ pub async fn handle(
     )
     .await
     {
-        Ok(_) => (
-            StatusCode::OK,
-            Json(ResponseBody {
-                success: true,
-                message: None,
-            }),
-        ),
+        Ok(_) => (StatusCode::OK, Json(UnitizedResponseBody::success(Data {}))),
         Err(e) => {
             tracing::error!("Error occurred: {}", e);
             match e {
@@ -63,7 +45,7 @@ pub async fn handle(
                     update_user::validation::Error::UsernameTooLong => {
                         return (
                             StatusCode::OK,
-                            Json(ResponseBody::failed(Some(
+                            Json(UnitizedResponseBody::failed(Some(
                                 "The username is too long".into(),
                             ))),
                         );
@@ -71,7 +53,7 @@ pub async fn handle(
                     update_user::validation::Error::UsernameTooShort => {
                         return (
                             StatusCode::OK,
-                            Json(ResponseBody::failed(Some(
+                            Json(UnitizedResponseBody::failed(Some(
                                 "The username is too short".into(),
                             ))),
                         );
@@ -79,7 +61,7 @@ pub async fn handle(
                     update_user::validation::Error::PasswordTooShort => {
                         return (
                             StatusCode::OK,
-                            Json(ResponseBody::failed(Some(
+                            Json(UnitizedResponseBody::failed(Some(
                                 "The password is too short".into(),
                             ))),
                         );
@@ -87,33 +69,37 @@ pub async fn handle(
                     update_user::validation::Error::NoFieldsToUpdate => {
                         return (
                             StatusCode::OK,
-                            Json(ResponseBody::failed(Some("No fields to update".into()))),
+                            Json(UnitizedResponseBody::failed(Some(
+                                "No fields to update".into(),
+                            ))),
                         );
                     }
                 },
                 update_user::Error::HashingError(_) => {
                     return (
                         StatusCode::INTERNAL_SERVER_ERROR,
-                        Json(ResponseBody::failed(None)),
+                        Json(UnitizedResponseBody::failed(None)),
                     );
                 }
                 update_user::Error::RepositoryError(error) => match error {
                     update_user::repository::Error::UserNotFound => {
                         return (
                             StatusCode::OK,
-                            Json(ResponseBody::failed(Some("User not found".into()))),
+                            Json(UnitizedResponseBody::failed(Some("User not found".into()))),
                         );
                     }
                     update_user::repository::Error::UsernameDuplication => {
                         return (
                             StatusCode::OK,
-                            Json(ResponseBody::failed(Some("Username already exists".into()))),
+                            Json(UnitizedResponseBody::failed(Some(
+                                "Username already exists".into(),
+                            ))),
                         );
                     }
                     update_user::repository::Error::Unknown(_) => {
                         return (
                             StatusCode::INTERNAL_SERVER_ERROR,
-                            Json(ResponseBody::failed(None)),
+                            Json(UnitizedResponseBody::failed(None)),
                         );
                     }
                 },

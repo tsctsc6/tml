@@ -130,10 +130,10 @@ impl JobHandler {
             let meilisearch_models: Vec<_> = chunk
                 .into_iter()
                 .map(|x| MusicInfoMeiliSearch {
-                    id: hex::encode(x.0),
-                    artists: x.1.artists,
-                    album_title: x.1.album_title,
-                    title: x.1.title,
+                    id: hex::encode(x.id),
+                    artists: x.artists,
+                    album_title: x.album_title,
+                    title: x.title,
                 })
                 .collect();
             let _task = self
@@ -152,12 +152,8 @@ impl JobHandler {
     pub async fn get_music_info_chunk_stream(
         &self,
         path: String,
-    ) -> impl tokio_stream::Stream<
-        Item = Vec<(
-            Vec<u8>,
-            tml_application::app_trait::music_info_provider::MusicInfo,
-        )>,
-    > {
+    ) -> impl tokio_stream::Stream<Item = Vec<tml_application::app_trait::music_info_provider::MusicInfo>>
+    {
         let (tx, rx) = mpsc::unbounded_channel();
 
         let music_info_provider = self.music_info_provider.clone();
@@ -226,28 +222,24 @@ impl Repository {
     async fn create_or_update_music_info(
         &self,
         storage_id: i64,
-        music_info: impl IntoIterator<
-            Item = (
-                Vec<u8>,
-                tml_application::app_trait::music_info_provider::MusicInfo,
-            ),
-        > + Send,
+        music_info: impl IntoIterator<Item = tml_application::app_trait::music_info_provider::MusicInfo>
+        + Send,
     ) -> Result<(), RepositoryError> {
         let on_conflict = OnConflict::column(music_info::Column::Id)
             .update_columns([music_info::Column::FilePath])
             .to_owned();
         let music_info_collection = music_info.into_iter().map(|x| music_info::ActiveModel {
-            id: Set(x.0),
-            artists: Set(x.1.artists),
-            album_title: Set(x.1.album_title),
-            title: Set(x.1.title),
-            track_number: Set(x.1.track_number),
-            audio_bitrate: Set(x.1.audio_bitrate),
-            sample_rate: Set(x.1.sample_rate),
-            channels: Set(x.1.channels),
-            bit_depth: Set(x.1.bit_depth),
+            id: Set(x.id),
+            artists: Set(x.artists),
+            album_title: Set(x.album_title),
+            title: Set(x.title),
+            track_number: Set(x.track_number),
+            audio_bitrate: Set(x.audio_bitrate),
+            sample_rate: Set(x.sample_rate),
+            channels: Set(x.channels),
+            bit_depth: Set(x.bit_depth),
             storage_id: Set(storage_id),
-            file_path: Set(x.1.file_path),
+            file_path: Set(x.file_path),
         });
         let _reslut = music_info::Entity::insert_many(music_info_collection)
             .on_conflict(on_conflict)

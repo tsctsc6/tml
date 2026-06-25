@@ -1,4 +1,8 @@
+use crate::app_trait;
+
 pub mod repository {
+    use crate::app_trait::tx_context::TxConnection;
+
     #[derive(Debug, thiserror::Error)]
     pub enum Error {
         #[error("Music list not found")]
@@ -11,12 +15,19 @@ pub mod repository {
 
     #[async_trait::async_trait]
     pub trait Trait: Send + Sync + Clone + 'static {
+        type Tx: TxConnection;
+
         async fn remove_music_info_from_music_list(
             &self,
+            tx_connection: &mut Self::Tx,
             music_list_id: i64,
             music_info_id: &[u8],
         ) -> Result<(), Error>;
-        async fn get_music_list_owner_id(&self, music_list_id: i64) -> Result<i64, Error>;
+        async fn get_music_list_owner_id(
+            &self,
+            tx_connection: &mut Self::Tx,
+            music_list_id: i64,
+        ) -> Result<i64, Error>;
     }
 }
 
@@ -34,20 +45,34 @@ pub enum Error {
     RepositoryError(#[from] repository::Error),
     #[error("Permission denied")]
     PermissionDenied,
+    #[error("Transaction error: {0}")]
+    TxError(#[from] app_trait::tx_context::Error),
 }
 
-pub async fn handle(
+pub async fn handle<R, M>(
     request: Request<'_>,
-    repository: &impl repository::Trait,
-) -> Result<Response, Error> {
+    repository: &R,
+    tx_manager: &M,
+) -> Result<Response, Error>
+where
+    R: repository::Trait<Tx = M::Tx>,
+    M: app_trait::tx_context::TxManager,
+{
+    let mut tx = tx_manager
+        .begin_with_config(
+            Some(app_trait::tx_context::IsolationLevel::ReadCommitted),
+            None,
+        )
+        .await?;
     let owner_id = repository
-        .get_music_list_owner_id(request.music_list_id)
+        .get_music_list_owner_id(&mut tx, request.music_list_id)
         .await?;
     if request.user_id != owner_id {
         return Err(Error::PermissionDenied);
     }
     repository
-        .remove_music_info_from_music_list(request.music_list_id, request.music_info_id)
+        .remove_music_info_from_music_list(&mut tx, request.music_list_id, request.music_info_id)
         .await?;
+    tx_manager.commit(tx).await?;
     Ok(Response)
 }

@@ -2,7 +2,7 @@ use axum::{Json, extract::State, http::StatusCode};
 use serde::{Deserialize, Serialize};
 use tml_application::usecase::mgmt::read_job;
 
-use crate::{app_state::AppState, extractor::Claims};
+use crate::{app_state::AppState, endpoint::UnitizedResponseBody, extractor::Claims};
 
 #[derive(Deserialize, Debug)]
 pub struct QueryParams {
@@ -23,23 +23,6 @@ pub struct Data {
     pub completed_at: Option<String>,
 }
 
-#[derive(Serialize)]
-pub struct ResponseBody {
-    pub success: bool,
-    pub message: Option<String>,
-    pub data: Option<Data>,
-}
-
-impl ResponseBody {
-    fn failed(message: Option<String>) -> ResponseBody {
-        ResponseBody {
-            success: false,
-            message,
-            data: None,
-        }
-    }
-}
-
 fn format_iso8601(dt: &chrono::DateTime<chrono::Utc>) -> String {
     dt.to_rfc3339()
 }
@@ -53,10 +36,10 @@ pub async fn handle(
     State(state): State<AppState>,
     claims: Claims,
     axum::extract::Query(query): axum::extract::Query<QueryParams>,
-) -> (StatusCode, Json<ResponseBody>) {
+) -> (StatusCode, Json<UnitizedResponseBody<Data>>) {
     tracing::info!("Received request: {:?}", query);
     if !claims.inner.roles.iter().any(|role| role == "admin") {
-        return (StatusCode::FORBIDDEN, Json(ResponseBody::failed(None)));
+        return (StatusCode::FORBIDDEN, Json(UnitizedResponseBody::failed(None)));
     }
 
     match read_job::handle(
@@ -67,22 +50,18 @@ pub async fn handle(
     {
         Ok(response) => (
             StatusCode::OK,
-            Json(ResponseBody {
-                success: true,
-                message: None,
-                data: Some(Data {
-                    id: response.id,
-                    job_type: format!("{:?}", response.job_type),
-                    job_args: response.job_args,
-                    status: format!("{:?}", response.status),
-                    description: response.description,
-                    error_message: response.error_message,
-                    success: response.success,
-                    created_by_id: response.created_by_id,
-                    created_at: format_iso8601(&response.created_at),
-                    completed_at: format_opt_iso8601(&response.completed_at),
-                }),
-            }),
+            Json(UnitizedResponseBody::success(Data {
+                id: response.id,
+                job_type: format!("{:?}", response.job_type),
+                job_args: response.job_args,
+                status: format!("{:?}", response.status),
+                description: response.description,
+                error_message: response.error_message,
+                success: response.success,
+                created_by_id: response.created_by_id,
+                created_at: format_iso8601(&response.created_at),
+                completed_at: format_opt_iso8601(&response.completed_at),
+            })),
         ),
         Err(e) => {
             tracing::error!("Error occurred: {}", e);
@@ -90,11 +69,11 @@ pub async fn handle(
                 read_job::Error::RepositoryError(e) => match e {
                     read_job::repository::Error::JobNotFound => (
                         StatusCode::OK,
-                        Json(ResponseBody::failed(Some("Job not found".into()))),
+                        Json(UnitizedResponseBody::failed(Some("Job not found".into()))),
                     ),
                     _ => (
                         StatusCode::INTERNAL_SERVER_ERROR,
-                        Json(ResponseBody::failed(None)),
+                        Json(UnitizedResponseBody::failed(None)),
                     ),
                 },
             }

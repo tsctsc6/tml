@@ -2,7 +2,7 @@ use axum::{Json, extract::State, http::StatusCode};
 use serde::Deserialize;
 use tml_application::usecase::mgmt::update_storage;
 
-use crate::{app_state::AppState, extractor::Claims};
+use crate::{app_state::AppState, endpoint::UnitizedResponseBody, extractor::Claims};
 
 #[derive(Deserialize, Debug)]
 pub struct RequestBody {
@@ -12,29 +12,17 @@ pub struct RequestBody {
 }
 
 #[derive(serde::Serialize)]
-pub struct ResponseBody {
-    pub success: bool,
-    pub message: Option<String>,
-}
-
-impl ResponseBody {
-    fn failed(message: Option<String>) -> ResponseBody {
-        ResponseBody {
-            success: false,
-            message,
-        }
-    }
-}
+pub struct Data {}
 
 #[axum::debug_handler]
 pub async fn handle(
     State(state): State<AppState>,
     claims: Claims,
     Json(request_body): Json<RequestBody>,
-) -> (StatusCode, Json<ResponseBody>) {
+) -> (StatusCode, Json<UnitizedResponseBody<Data>>) {
     tracing::info!("Received request: {:?}", request_body);
     if !claims.inner.roles.iter().any(|role| role == "admin") {
-        return (StatusCode::FORBIDDEN, Json(ResponseBody::failed(None)));
+        return (StatusCode::FORBIDDEN, Json(UnitizedResponseBody::failed(None)));
     }
     match update_storage::handle(
         update_storage::Request {
@@ -48,10 +36,7 @@ pub async fn handle(
     {
         Ok(_) => (
             StatusCode::OK,
-            Json(ResponseBody {
-                success: true,
-                message: None,
-            }),
+            Json(UnitizedResponseBody::success(Data {})),
         ),
         Err(e) => {
             tracing::error!("Error occurred: {}", e);
@@ -60,13 +45,13 @@ pub async fn handle(
                     update_storage::validation::Error::NameTooLong => {
                         return (
                             StatusCode::OK,
-                            Json(ResponseBody::failed(Some("The name is too long".into()))),
+                            Json(UnitizedResponseBody::failed(Some("The name is too long".into()))),
                         );
                     }
                     update_storage::validation::Error::InvalidPath => {
                         return (
                             StatusCode::OK,
-                            Json(ResponseBody::failed(Some("The path is invalid".into()))),
+                            Json(UnitizedResponseBody::failed(Some("The path is invalid".into()))),
                         );
                     }
                 },
@@ -74,7 +59,7 @@ pub async fn handle(
                     update_storage::repository::Error::NameDuplication => {
                         return (
                             StatusCode::OK,
-                            Json(ResponseBody::failed(Some(
+                            Json(UnitizedResponseBody::failed(Some(
                                 "The name is already exists".into(),
                             ))),
                         );
@@ -82,7 +67,7 @@ pub async fn handle(
                     update_storage::repository::Error::PathDuplication => {
                         return (
                             StatusCode::OK,
-                            Json(ResponseBody::failed(Some(
+                            Json(UnitizedResponseBody::failed(Some(
                                 "The path is already exists".into(),
                             ))),
                         );
@@ -90,7 +75,7 @@ pub async fn handle(
                     update_storage::repository::Error::StorageNotFound => {
                         return (
                             StatusCode::OK,
-                            Json(ResponseBody::failed(Some(
+                            Json(UnitizedResponseBody::failed(Some(
                                 "The storage is not found".into(),
                             ))),
                         );
@@ -98,7 +83,7 @@ pub async fn handle(
                     update_storage::repository::Error::Unknown(_) => {
                         return (
                             StatusCode::INTERNAL_SERVER_ERROR,
-                            Json(ResponseBody::failed(None)),
+                            Json(UnitizedResponseBody::failed(None)),
                         );
                     }
                 },

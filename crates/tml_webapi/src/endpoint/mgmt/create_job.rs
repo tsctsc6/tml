@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use tml_application::usecase::mgmt::create_job;
 use tml_domain::model::mgmt::job;
 
-use crate::{app_state::AppState, extractor::Claims};
+use crate::{app_state::AppState, endpoint::UnitizedResponseBody, extractor::Claims};
 
 #[derive(Deserialize, Debug)]
 pub struct RequestBody {
@@ -13,20 +13,8 @@ pub struct RequestBody {
 }
 
 #[derive(Serialize)]
-pub struct ResponseBody {
-    pub success: bool,
-    pub message: Option<String>,
-    pub id: Option<i64>,
-}
-
-impl ResponseBody {
-    fn failed(message: Option<String>) -> ResponseBody {
-        ResponseBody {
-            success: false,
-            message,
-            id: None,
-        }
-    }
+pub struct Data {
+    pub id: i64,
 }
 
 #[axum::debug_handler]
@@ -34,10 +22,10 @@ pub async fn handle(
     State(state): State<AppState>,
     claims: Claims,
     Json(request_body): Json<RequestBody>,
-) -> (StatusCode, Json<ResponseBody>) {
+) -> (StatusCode, Json<UnitizedResponseBody<Data>>) {
     tracing::info!("Received request: {:?}", request_body);
     if !claims.inner.roles.iter().any(|role| role == "admin") {
-        return (StatusCode::FORBIDDEN, Json(ResponseBody::failed(None)));
+        return (StatusCode::FORBIDDEN, Json(UnitizedResponseBody::failed(None)));
     }
 
     let job_type = match request_body.job_type.as_str() {
@@ -49,7 +37,7 @@ pub async fn handle(
         _ => {
             return (
                 StatusCode::OK,
-                Json(ResponseBody::failed(Some("Invalid job_type".into()))),
+                Json(UnitizedResponseBody::failed(Some("Invalid job_type".into()))),
             );
         }
     };
@@ -76,11 +64,9 @@ pub async fn handle(
     {
         Ok(response) => (
             StatusCode::OK,
-            Json(ResponseBody {
-                success: true,
-                id: Some(response.id),
-                message: None,
-            }),
+            Json(UnitizedResponseBody::success(Data {
+                id: response.id,
+            })),
         ),
         Err(e) => {
             tracing::error!("Error occurred: {}", e);
@@ -89,7 +75,7 @@ pub async fn handle(
                     create_job::validation::Error::DescriptionTooLong => {
                         return (
                             StatusCode::OK,
-                            Json(ResponseBody::failed(Some(
+                            Json(UnitizedResponseBody::failed(Some(
                                 "The description is too long".into(),
                             ))),
                         );
@@ -99,7 +85,7 @@ pub async fn handle(
                     create_job::repository::Error::Unknown(_) => {
                         return (
                             StatusCode::INTERNAL_SERVER_ERROR,
-                            Json(ResponseBody::failed(None)),
+                            Json(UnitizedResponseBody::failed(None)),
                         );
                     }
                 },

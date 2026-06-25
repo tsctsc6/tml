@@ -1,23 +1,27 @@
-use crate::entity::app::music_list;
-use sea_orm::EntityTrait;
+use crate::{entity::app::music_list, tx_context::SeaOrmTxConnection};
+use sea_orm::{EntityTrait, QuerySelect as _, sea_query::LockType};
 use tml_application::usecase::app::delete_music_list;
 
 #[derive(Clone)]
-pub struct Repository {
-    db: sea_orm::DatabaseConnection,
-}
+pub struct Repository {}
 
 impl Repository {
-    pub fn new(db: sea_orm::DatabaseConnection) -> Self {
-        Repository { db }
+    pub fn new() -> Self {
+        Repository {}
     }
 }
 
 #[async_trait::async_trait]
 impl delete_music_list::repository::Trait for Repository {
-    async fn delete_music_list(&self, id: i64) -> Result<(), delete_music_list::repository::Error> {
+    type Tx = SeaOrmTxConnection;
+
+    async fn delete_music_list(
+        &self,
+        tx_connection: &mut Self::Tx,
+        id: i64,
+    ) -> Result<(), delete_music_list::repository::Error> {
         let result = music_list::Entity::delete_by_id(id)
-            .exec(&self.db)
+            .exec(&tx_connection.tx)
             .await
             .map_err(|e| -> delete_music_list::repository::Error {
                 delete_music_list::repository::Error::Unknown(e.to_string())
@@ -30,10 +34,12 @@ impl delete_music_list::repository::Trait for Repository {
 
     async fn get_music_list_owner_id(
         &self,
+        tx_connection: &mut Self::Tx,
         music_list_id: i64,
     ) -> Result<i64, delete_music_list::repository::Error> {
         let music_list = music_list::Entity::find_by_id(music_list_id)
-            .one(&self.db)
+            .lock(LockType::Update)
+            .one(&tx_connection.tx)
             .await
             .map_err(|e| -> delete_music_list::repository::Error {
                 delete_music_list::repository::Error::Unknown(e.to_string())
