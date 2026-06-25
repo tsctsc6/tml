@@ -53,7 +53,7 @@ apiClient.interceptors.response.use(
   },
 );
 
-export const request = {
+export const apiClientExt = {
   get<T = any>(
     url: string,
     config?: AxiosRequestConfig,
