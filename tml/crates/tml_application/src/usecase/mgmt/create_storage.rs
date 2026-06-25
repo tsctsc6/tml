@@ -1,3 +1,7 @@
+use std::path::Path;
+
+use path_slash::PathExt as _;
+
 pub mod repository {
     use tml_domain::model::mgmt::storage;
 
@@ -67,8 +71,7 @@ pub async fn handle(
     repository: &impl repository::Trait,
 ) -> Result<Response, Error> {
     validation::validate(&request)?;
-    let new_storage = repository
-        .create_storage(request.name, request.path)
-        .await?;
+    let path = Path::new(request.path).to_slash_lossy();
+    let new_storage = repository.create_storage(request.name, &path).await?;
     Ok(Response { id: new_storage.id })
 }
