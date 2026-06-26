@@ -1,19 +1,26 @@
 <script lang="ts">
   import {
+    Button,
     Column,
     Grid,
     Loading,
     Modal,
     NotificationQueue,
+    NumberInput,
     Row,
+    Select,
+    SelectItem,
     StructuredList,
     StructuredListBody,
     StructuredListCell,
     StructuredListHead,
     StructuredListRow,
     Tag,
+    TextInput,
     Tile,
   } from "carbon-components-svelte";
+  import TrashCan from "carbon-icons-svelte/lib/TrashCan.svelte";
+  import Add from "carbon-icons-svelte/lib/Add.svelte";
   import { apiClientExt } from "../../lib/api";
   import { onMount, tick } from "svelte";
 
@@ -32,7 +39,7 @@
     next_cursor: number | null;
   }
 
-  let items: JobItem[] = [];
+  let rows: JobItem[] = [];
   let nextCursor: number | null = null;
   let pageSize = 10;
   let isLoading = false;
@@ -49,7 +56,7 @@
         throw new Error(response.message ?? "");
       }
 
-      items = [...items, ...response.data.items];
+      rows = [...rows, ...response.data.items];
       nextCursor = response.data.next_cursor;
     } catch (error: any) {
       queue.add({
@@ -167,9 +174,126 @@
         return "gray";
     }
   }
+
+  interface DeleteJobRequest {
+    id: number;
+  }
+
+  interface DeleteJobResponse {}
+
+  // Modal Delete
+  let itemToDeleteId = 0;
+  let isDeleteModalOpen = false;
+  let isDeleting = false;
+
+  function triggerDelete(event: PointerEvent, item: JobItem): void {
+    event.stopPropagation();
+    itemToDeleteId = item.id;
+    isDeleteModalOpen = true;
+  }
+
+  async function confirmDelete() {
+    if (itemToDeleteId == 0) return;
+    isDeleting = true;
+
+    try {
+      const deleteJobRequest: DeleteJobRequest = {
+        id: itemToDeleteId,
+      };
+      const response = await apiClientExt.post<DeleteJobResponse>(
+        "/mgmt/delete_job",
+        deleteJobRequest,
+      );
+      if (!response.success || !response.data) {
+        throw new Error(response.message ?? "");
+      }
+      rows = rows.filter((item) => item.id !== itemToDeleteId);
+      isDeleteModalOpen = false;
+    } catch (error: any) {
+      queue.add({
+        kind: "error",
+        title: "Error",
+        subtitle: error.toString(),
+        timeout: 3000,
+      });
+    } finally {
+      isDeleting = false;
+      itemToDeleteId = 0;
+    }
+  }
+
+  type CreateJobRequest =
+    | {
+        job_type: string;
+        description: string;
+      }
+    | {
+        job_type: string;
+        description: string;
+        job_args: ScanIncrementalArgs;
+      };
+
+  interface ScanIncrementalArgs {
+    storage_id: number;
+  }
+
+  interface CreateJobResponse {
+    id: number;
+  }
+
+  // Modal Create
+  let isCreateModalOpen = false;
+  let createJobRequest: CreateJobRequest = { job_type: "", description: "" };
+  let scanIncrementalArgs: ScanIncrementalArgs = { storage_id: 0 };
+  let isCreating = false;
+
+  function triggerAdd() {
+    isCreateModalOpen = true;
+    createJobRequest = { job_type: "scan_incremental", description: "" };
+  }
+
+  async function confirmAdd() {
+    switch (createJobRequest.job_type) {
+      case "scan_incremental":
+        createJobRequest = {
+          ...createJobRequest,
+          job_args: { ...scanIncrementalArgs },
+        };
+        break;
+      default:
+        break;
+    }
+    try {
+      const response = await apiClientExt.post<CreateJobResponse>(
+        "/mgmt/create_job",
+        createJobRequest,
+      );
+      if (!response.success || !response.data) {
+        throw new Error(response.message ?? "");
+      }
+      rows = [];
+      nextCursor = null;
+      fetchPage();
+    } catch (error: any) {
+      queue.add({
+        kind: "error",
+        title: "Error",
+        subtitle: error.toString(),
+        timeout: 3000,
+      });
+    } finally {
+      isCreating = false;
+      isCreateModalOpen = false;
+    }
+  }
 </script>
 
 <NotificationQueue bind:this={queue} />
+
+<div class="list-header">
+  <h4>Jobs</h4>
+  <Button icon={Add} iconDescription="Add" on:click={triggerAdd} />
+</div>
 
 <StructuredList flush selection>
   <StructuredListHead>
@@ -179,17 +303,28 @@
       <StructuredListCell head>Success</StructuredListCell>
       <StructuredListCell head>Status</StructuredListCell>
       <StructuredListCell head>Created at</StructuredListCell>
+      <StructuredListCell head></StructuredListCell>
     </StructuredListRow>
   </StructuredListHead>
   <StructuredListBody>
-    {#each items as item (item.id)}
+    {#each rows as item (item.id)}
       <StructuredListRow on:click={() => handleRowClick(item)}>
         <StructuredListCell>{item.id}</StructuredListCell>
-        <StructuredListCell><strong>{item.job_type}</strong></StructuredListCell
-        >
+        <StructuredListCell>
+          <strong>{item.job_type}</strong>
+        </StructuredListCell>
         <StructuredListCell>{item.success}</StructuredListCell>
         <StructuredListCell>{item.status}</StructuredListCell>
         <StructuredListCell>{item.created_at}</StructuredListCell>
+        <StructuredListCell class="action-cell">
+          <Button
+            kind="danger-tertiary"
+            size="small"
+            iconDescription="Delete"
+            icon={TrashCan}
+            on:click={(e) => triggerDelete(e, item)}
+          />
+        </StructuredListCell>
       </StructuredListRow>
     {/each}
   </StructuredListBody>
@@ -293,7 +428,64 @@
   {/if}
 </Modal>
 
+<Modal
+  danger
+  bind:open={isDeleteModalOpen}
+  modalHeading="Are you sure to delete?"
+  primaryButtonText={isDeleting ? "Deleting..." : "Delete"}
+  secondaryButtonText="Cancael"
+  primaryButtonDisabled={isDeleting}
+  on:click:button--primary={confirmDelete}
+  on:click:button--secondary={() => (isDeleteModalOpen = false)}
+  on:close={() => (isDeleteModalOpen = false)}
+>
+  <p>
+    Are you sure to delete job <strong>{itemToDeleteId}</strong> ?
+  </p>
+</Modal>
+
+<Modal
+  bind:open={isCreateModalOpen}
+  modalHeading="Create job"
+  primaryButtonText={isCreating ? "Creating" : "Create"}
+  secondaryButtonText="Cancel"
+  primaryButtonDisabled={isCreating}
+  preventCloseOnClickOutside
+  on:click:button--primary={confirmAdd}
+  on:click:button--secondary={() => (isCreateModalOpen = false)}
+  on:close={() => {
+    createJobRequest = { job_type: "", description: "" };
+  }}
+  ><div class="edit-form">
+    <Select labelText="Job Type" bind:selected={createJobRequest.job_type}>
+      <SelectItem value="scan_incremental" />
+      <SelectItem value="build_index" />
+      <SelectItem value="update_index" />
+      <SelectItem value="delete_index" />
+      <SelectItem value="rebuild_index" />
+    </Select>
+  </div>
+  {#if createJobRequest.job_type === "scan_incremental"}
+    <NumberInput
+      labelText="Storage Id"
+      bind:value={scanIncrementalArgs.storage_id}
+      placeholder="Storage Id"
+    />
+  {:else}{/if}
+  <div class="edit-form">
+    <TextInput
+      labelText="Description"
+      bind:value={createJobRequest.description}
+      placeholder="Description"
+    />
+  </div></Modal
+>
+
 <style>
+  .edit-form :global(.bx--form-item) {
+    margin-bottom: 1.25rem;
+  }
+
   .loading-trigger {
     display: flex;
     justify-content: center;
@@ -309,12 +501,8 @@
   :global(.detail-tile) {
     background-color: var(--cds-layer-01, #f4f4f4) !important;
     border-radius: 4px;
-    border-left: 4px solid var(--cds-interactive-01, #0f62fe); /* 左侧标志性蓝条 */
+    border-left: 4px solid var(--cds-interactive-01, #0f62fe);
     padding: 0 !important;
-  }
-
-  .detail-header-row {
-    align-items: center;
   }
 
   .detail-title {
@@ -353,31 +541,9 @@
     margin-top: 0.25rem;
   }
 
-  .align-right {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
   .carbon-divider {
     border: none;
     border-top: 1px solid var(--cds-border-subtle, #e0e0e0);
     margin: 1.25rem 0;
-  }
-
-  .margin-top-md {
-    margin-top: 1.25rem;
-  }
-
-  .loading-placeholder {
-    text-align: center;
-    padding: 3rem;
-    color: var(--cds-text-disabled, #a8a8a8);
-  }
-
-  @media (min-width: 672px) {
-    .align-right {
-      align-items: flex-end;
-    }
   }
 </style>
