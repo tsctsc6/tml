@@ -13,6 +13,11 @@
 
   let queue: NotificationQueue;
 
+  interface Props {
+    onLoginSuccess: () => void;
+  }
+  let { onLoginSuccess }: Props = $props();
+
   interface LoginRequest {
     username: string;
     password: string;
@@ -40,7 +45,7 @@
         throw new Error(response.message ?? "");
       }
       localStorage.setItem("token", response.data.token);
-      window.location.reload();
+      onLoginSuccess();
     } catch (error: any) {
       queue.add({
         kind: "error",

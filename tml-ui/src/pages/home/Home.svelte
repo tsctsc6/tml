@@ -9,6 +9,7 @@
   import UserProfile from "./UserProfile.svelte";
   import { onMount } from "svelte";
   import { apiClientExt } from "../../lib/api";
+  import type { UserProfileType } from "./userProfileType";
 
   interface ReadUserInfoResponse {
     username: string;
@@ -19,8 +20,9 @@
   let queue: NotificationQueue;
 
   onMount(async () => {
+    isLoggedIn = false;
     try {
-      const response = await apiClientExt.get<ReadUserInfoResponse>(
+      const response = await apiClientExt.get<UserProfileType>(
         "/auth/read_user_info",
       );
       if (!response.success) {
@@ -46,7 +48,9 @@
   </Row>
   <Row>
     <Column>
-      {#if isLoggedIn}<UserProfile />{:else}<Login />{/if}
+      {#if isLoggedIn}<UserProfile
+          onLogout={() => (isLoggedIn = false)}
+        />{:else}<Login onLoginSuccess={() => (isLoggedIn = true)} />{/if}
     </Column>
   </Row>
 </Grid>
