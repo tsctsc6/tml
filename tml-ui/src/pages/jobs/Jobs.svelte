@@ -2,14 +2,13 @@
   import {
     Button,
     Column,
+    Dropdown,
     Grid,
     Loading,
     Modal,
     NotificationQueue,
     NumberInput,
     Row,
-    Select,
-    SelectItem,
     StructuredList,
     StructuredListBody,
     StructuredListCell,
@@ -18,6 +17,8 @@
     Tag,
     TextInput,
     Tile,
+    Toolbar,
+    ToolbarContent,
   } from "carbon-components-svelte";
   import TrashCan from "carbon-icons-svelte/lib/TrashCan.svelte";
   import Add from "carbon-icons-svelte/lib/Add.svelte";
@@ -243,18 +244,31 @@
 
   // Modal Create
   let isCreateModalOpen = false;
+  let jobTypeSelectedId = 0;
   let createJobRequest: CreateJobRequest = { job_type: "", description: "" };
   let scanIncrementalArgs: ScanIncrementalArgs = { storage_id: 0 };
   let isCreating = false;
 
+  let jobTypeMap = [
+    { id: 0, text: "scan_incremental" },
+    { id: 1, text: "build_index" },
+    { id: 2, text: "update_index" },
+    { id: 3, text: "delete_index" },
+    { id: 4, text: "rebuild_index" },
+  ];
+
   function triggerAdd() {
     isCreateModalOpen = true;
-    createJobRequest = { job_type: "scan_incremental", description: "" };
+    jobTypeSelectedId = 0;
+    createJobRequest = { job_type: "", description: "" };
   }
 
   async function confirmAdd() {
-    switch (createJobRequest.job_type) {
-      case "scan_incremental":
+    console.log(jobTypeSelectedId);
+    createJobRequest.job_type =
+      jobTypeMap.find((x) => x.id === jobTypeSelectedId)?.text ?? "";
+    switch (jobTypeSelectedId) {
+      case 0:
         createJobRequest = {
           ...createJobRequest,
           job_args: { ...scanIncrementalArgs },
@@ -290,10 +304,13 @@
 
 <NotificationQueue bind:this={queue} />
 
-<div class="list-header">
-  <h4>Jobs</h4>
-  <Button icon={Add} iconDescription="Add" on:click={triggerAdd} />
-</div>
+<h4>Jobs</h4>
+
+<Toolbar>
+  <ToolbarContent>
+    <Button icon={Add} iconDescription="Add" on:click={triggerAdd} />
+  </ToolbarContent>
+</Toolbar>
 
 <StructuredList flush selection>
   <StructuredListHead>
@@ -450,22 +467,19 @@
   primaryButtonText={isCreating ? "Creating" : "Create"}
   secondaryButtonText="Cancel"
   primaryButtonDisabled={isCreating}
-  preventCloseOnClickOutside
   on:click:button--primary={confirmAdd}
   on:click:button--secondary={() => (isCreateModalOpen = false)}
   on:close={() => {
     createJobRequest = { job_type: "", description: "" };
   }}
   ><div class="edit-form">
-    <Select labelText="Job Type" bind:selected={createJobRequest.job_type}>
-      <SelectItem value="scan_incremental" />
-      <SelectItem value="build_index" />
-      <SelectItem value="update_index" />
-      <SelectItem value="delete_index" />
-      <SelectItem value="rebuild_index" />
-    </Select>
+    <Dropdown
+      labelText="Job Type"
+      bind:selectedId={jobTypeSelectedId}
+      items={jobTypeMap}
+    />
   </div>
-  {#if createJobRequest.job_type === "scan_incremental"}
+  {#if jobTypeSelectedId === 0}
     <NumberInput
       labelText="Storage Id"
       bind:value={scanIncrementalArgs.storage_id}
