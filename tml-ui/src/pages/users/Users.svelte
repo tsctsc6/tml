@@ -19,6 +19,7 @@
 
   let queue: NotificationQueue;
 
+  /// Read all
   interface ReadAllNormalUserResponse {
     total: number;
     items: UserItem[];
@@ -75,6 +76,7 @@
 
   $: fetchData(page, pageSize);
 
+  /// Update
   interface UpdateNormalUserRequest {
     id: number;
     username: string;
@@ -83,7 +85,6 @@
 
   interface UpdateNormalUserResponse {}
 
-  // Modal Editing
   let isEditingModalOpen = false;
   let isEditingSubmitting = false;
   // Copy a data, in case user not save
@@ -140,13 +141,13 @@
     }
   }
 
+  /// Delete
   interface DeleteNormalUserRequest {
     id: number;
   }
 
   interface DeleteNormalUserResponse {}
 
-  // Modal Delete
   let isDeleteModalOpen = false;
   let itemToDelete: UserItem | null = null;
   let isDeleting = false;
@@ -187,6 +188,7 @@
     }
   }
 
+  /// Create
   interface CreateNormalUserRequest {
     username: string;
     password: string;
@@ -194,7 +196,6 @@
 
   interface CreateNormalUserResponse {}
 
-  // Modal Create
   let isCreateModalOpen = false;
   let itemToCreate: CreateNormalUserRequest = {
     username: "",
@@ -202,7 +203,7 @@
   };
   let isCreating = false;
 
-  function openAddModal() {
+  function triggerCreate() {
     itemToCreate = {
       username: "",
       password: "",
@@ -210,7 +211,7 @@
     isCreateModalOpen = true;
   }
 
-  async function submitCreate() {
+  async function confirmCreate() {
     isCreating = true;
     try {
       const response = await apiClientExt.post<CreateNormalUserResponse>(
@@ -248,7 +249,7 @@
           iconDescription="Refresh"
           on:click={() => fetchData(page, pageSize)}
         />
-        <Button icon={Add} iconDescription="Add" on:click={openAddModal} />
+        <Button icon={Add} iconDescription="Add" on:click={triggerCreate} />
       </ToolbarContent>
     </Toolbar>
     <svelte:fragment slot="cell" let:cell let:row>
@@ -322,7 +323,7 @@
   primaryButtonText={isCreating ? "Creating" : "Create"}
   secondaryButtonText="Cancel"
   primaryButtonDisabled={isCreating}
-  on:click:button--primary={submitCreate}
+  on:click:button--primary={confirmCreate}
   on:click:button--secondary={() => (isCreateModalOpen = false)}
   on:close={() => (isCreateModalOpen = false)}
 >

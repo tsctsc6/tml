@@ -27,6 +27,7 @@
 
   let queue: NotificationQueue;
 
+  /// Read all
   interface JobItem {
     id: number;
     job_type: string;
@@ -106,6 +107,7 @@
     fetchPage();
   });
 
+  /// Read details
   interface ReadJobResponse {
     id: number;
     job_type: string;
@@ -119,7 +121,6 @@
     completed_at: string;
   }
 
-  // Modal Details
   let isDetailsModalOpen = false;
   let selectedJobId = 0;
   let jobDetails: ReadJobResponse | null = null;
@@ -176,13 +177,13 @@
     }
   }
 
+  /// Delete
   interface DeleteJobRequest {
     id: number;
   }
 
   interface DeleteJobResponse {}
 
-  // Modal Delete
   let itemToDeleteId = 0;
   let isDeleteModalOpen = false;
   let isDeleting = false;
@@ -223,6 +224,7 @@
     }
   }
 
+  /// Create
   type CreateJobRequest =
     | {
         job_type: string;
@@ -242,7 +244,6 @@
     id: number;
   }
 
-  // Modal Create
   let isCreateModalOpen = false;
   let jobTypeSelectedId = 0;
   let createJobRequest: CreateJobRequest = { job_type: "", description: "" };
@@ -257,13 +258,13 @@
     { id: 4, text: "rebuild_index" },
   ];
 
-  function triggerAdd() {
+  function triggerCreate() {
     isCreateModalOpen = true;
     jobTypeSelectedId = 0;
     createJobRequest = { job_type: "", description: "" };
   }
 
-  async function confirmAdd() {
+  async function confirmCreate() {
     console.log(jobTypeSelectedId);
     createJobRequest.job_type =
       jobTypeMap.find((x) => x.id === jobTypeSelectedId)?.text ?? "";
@@ -308,7 +309,7 @@
 
 <Toolbar>
   <ToolbarContent>
-    <Button icon={Add} iconDescription="Add" on:click={triggerAdd} />
+    <Button icon={Add} iconDescription="Add" on:click={triggerCreate} />
   </ToolbarContent>
 </Toolbar>
 
@@ -467,7 +468,7 @@
   primaryButtonText={isCreating ? "Creating" : "Create"}
   secondaryButtonText="Cancel"
   primaryButtonDisabled={isCreating}
-  on:click:button--primary={confirmAdd}
+  on:click:button--primary={confirmCreate}
   on:click:button--secondary={() => (isCreateModalOpen = false)}
   on:close={() => {
     createJobRequest = { job_type: "", description: "" };

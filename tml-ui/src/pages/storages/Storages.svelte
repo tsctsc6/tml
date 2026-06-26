@@ -17,6 +17,7 @@
 
   let queue: NotificationQueue;
 
+  /// Read all
   interface ReadAllStorageResponse {
     total: number;
     items: StorageItem[];
@@ -72,6 +73,7 @@
 
   $: fetchData(page, pageSize);
 
+  /// Update
   interface UpdateStorageRequest {
     id: number;
     name: string;
@@ -80,7 +82,6 @@
 
   interface UpdateStorageResponse {}
 
-  // Modal Editing
   let isEditingModalOpen = false;
   let isEditingSubmitting = false;
   // Copy a data, in case user not save
@@ -137,13 +138,13 @@
     }
   }
 
+  /// Delete
   interface DeleteStorageRequest {
     id: number;
   }
 
   interface DeleteStorageResponse {}
 
-  // Modal Delete
   let isDeleteModalOpen = false;
   let itemToDelete: StorageItem | null = null;
   let isDeleting = false;
@@ -184,6 +185,7 @@
     }
   }
 
+  /// Create
   interface CreateStorageRequest {
     name: string;
     path: string;
@@ -191,7 +193,6 @@
 
   interface CreateStorageResponse {}
 
-  // Modal Create
   let isCreateModalOpen = false;
   let itemToCreate: CreateStorageRequest = {
     name: "",
@@ -199,7 +200,7 @@
   };
   let isCreating = false;
 
-  function openAddModal() {
+  function triggerCreate() {
     itemToCreate = {
       name: "",
       path: "",
@@ -207,7 +208,7 @@
     isCreateModalOpen = true;
   }
 
-  async function submitCreate() {
+  async function confirmCreate() {
     isCreating = true;
     try {
       const response = await apiClientExt.post<CreateStorageResponse>(
@@ -245,7 +246,7 @@
           iconDescription="Refresh"
           on:click={() => fetchData(page, pageSize)}
         />
-        <Button icon={Add} iconDescription="Add" on:click={openAddModal}
+        <Button icon={Add} iconDescription="Add" on:click={triggerCreate}
         ></Button>
       </ToolbarContent>
     </Toolbar>
@@ -324,7 +325,7 @@
   primaryButtonText={isCreating ? "Creating" : "Create"}
   secondaryButtonText="Cancel"
   primaryButtonDisabled={isCreating}
-  on:click:button--primary={submitCreate}
+  on:click:button--primary={confirmCreate}
   on:click:button--secondary={() => (isCreateModalOpen = false)}
   on:close={() => (isCreateModalOpen = false)}
 >
