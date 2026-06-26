@@ -2,6 +2,8 @@
   import {
     Button,
     Column,
+    DatePicker,
+    DatePickerInput,
     Dropdown,
     Grid,
     Loading,
@@ -21,6 +23,7 @@
     ToolbarContent,
   } from "carbon-components-svelte";
   import TrashCan from "carbon-icons-svelte/lib/TrashCan.svelte";
+  import CloudDownload from "carbon-icons-svelte/lib/CloudDownload.svelte";
   import Add from "carbon-icons-svelte/lib/Add.svelte";
   import { apiClientExt } from "../../lib/api";
   import { onMount, tick } from "svelte";
@@ -45,14 +48,19 @@
   let nextCursor: number | null = null;
   let pageSize = 10;
   let isLoading = false;
+  let startDate = "";
+  let endDate = "";
 
   async function fetchPage() {
     isLoading = true;
     try {
       let url = `/mgmt/read_all_job?page_size=${pageSize}`;
-      if (nextCursor) {
-        url = url + `&cursor=${nextCursor}`;
-      }
+      if (nextCursor) url = url + `&cursor=${nextCursor}`;
+      // %2B is +
+      if (startDate !== "")
+        url = url + `&created_after=${startDate}T00:00:00%2B00:00`;
+      if (endDate !== "")
+        url = url + `&created_before=${endDate}T00:00:00%2B00:00`;
       const response = await apiClientExt.get<ReadAllJobResponse>(url);
       if (!response.success || !response.data) {
         throw new Error(response.message ?? "");
@@ -106,6 +114,12 @@
   onMount(() => {
     fetchPage();
   });
+
+  async function refresh() {
+    rows = [];
+    nextCursor = null;
+    await fetchPage();
+  }
 
   /// Read details
   interface ReadJobResponse {
@@ -286,9 +300,7 @@
       if (!response.success || !response.data) {
         throw new Error(response.message ?? "");
       }
-      rows = [];
-      nextCursor = null;
-      fetchPage();
+      refresh();
     } catch (error: any) {
       queue.add({
         kind: "error",
@@ -309,6 +321,16 @@
 
 <Toolbar>
   <ToolbarContent>
+    <DatePicker
+      datePickerType="range"
+      dateFormat="Y-m-d"
+      bind:valueFrom={startDate}
+      bind:valueTo={endDate}
+    >
+      <DatePickerInput labelText="Start date" placeholder="yyyy-mm-dd" />
+      <DatePickerInput labelText="End date" placeholder="yyyy-mm-dd" />
+    </DatePicker>
+    <Button icon={CloudDownload} iconDescription="Refresh" on:click={refresh} />
     <Button icon={Add} iconDescription="Add" on:click={triggerCreate} />
   </ToolbarContent>
 </Toolbar>
