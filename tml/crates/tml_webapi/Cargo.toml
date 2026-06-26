@@ -31,3 +31,5 @@ axum-extra = { workspace = true }
 axum-range = { workspace = true }
 percent-encoding = { workspace = true }
 reqwest = { workspace = true }
+rust-embed = { workspace = true }
+mime_guess = { workspace = true }

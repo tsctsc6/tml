@@ -3,6 +3,7 @@ use serde::Serialize;
 pub mod app;
 pub mod auth;
 pub mod mgmt;
+pub mod static_file;
 
 #[derive(Serialize)]
 pub struct UnitizedResponseBody<T> {
