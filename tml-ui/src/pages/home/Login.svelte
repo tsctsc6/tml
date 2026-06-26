@@ -27,8 +27,8 @@
     token: string;
   }
 
-  let username: string = "";
-  let password: string = "";
+  let username: string = $state("");
+  let password: string = $state("");
 
   async function handleFormSubmit(e: SubmitEvent): Promise<void> {
     e.preventDefault();
