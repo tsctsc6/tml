@@ -102,7 +102,7 @@ jobs:
         run: |
           Compress-Archive -Path "tml/target/release/tml_webapi.exe", "tml/config_example.toml" -DestinationPath "tml-${{ matrix.rid }}-v${{ steps.get_metadata.outputs.version }}.zip"
 
-      - name: Compress archive (Windows)
+      - name: Compress archive (GNU)
         if: matrix.rid != 'win-x86_64' && matrix.rid != 'win-aarch64'
         run: |
           Compress-Archive -Path "tml/target/release/tml_webapi", "tml/config_example.toml" -DestinationPath "tml-${{ matrix.rid }}-v${{ steps.get_metadata.outputs.version }}.zip"
