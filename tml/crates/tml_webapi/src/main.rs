@@ -191,6 +191,7 @@ async fn start(app_state: AppState) -> ExitCode {
         .nest("/api/mgmt", mgmt_routes)
         .nest("/api/auth", auth_routes)
         .nest("/api/app", app_routes)
+        .fallback(endpoint::static_file::handle)
         .with_state(app_state);
     match axum::serve(listener, app).await {
         Ok(_) => {}

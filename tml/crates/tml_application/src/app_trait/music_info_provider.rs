@@ -1,18 +1,6 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Clone)]
-pub struct MusicInfoHash {
-    pub title: String,
-    pub artists: Vec<String>,
-    pub album_title: String,
-    pub track_number: i32,
-    pub audio_bitrate: i32,
-    pub sample_rate: i32,
-    pub channels: i16,
-    pub bit_depth: i16,
-}
-
-#[derive(Serialize, Clone)]
 pub struct MusicInfo {
     pub id: Vec<u8>,
     pub title: String,

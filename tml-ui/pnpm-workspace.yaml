@@ -1,3 +1,5 @@
+allowBuilds:
+  carbon-components-svelte: false
 onlyBuiltDependencies:
   - '@tailwindcss/oxide'
   - esbuild

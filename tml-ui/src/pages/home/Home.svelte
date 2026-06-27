@@ -1,9 +1,15 @@
 <script lang="ts">
-  import { Column, Grid, Row } from "carbon-components-svelte";
+  import {
+    Column,
+    Grid,
+    NotificationQueue,
+    Row,
+  } from "carbon-components-svelte";
   import Login from "./Login.svelte";
   import UserProfile from "./UserProfile.svelte";
   import { onMount } from "svelte";
-  import apiClient from "../../lib/api";
+  import { apiClientExt } from "../../lib/api";
+  import type { UserProfileType } from "./userProfileType";
 
   interface ReadUserInfoResponse {
     username: string;
@@ -11,23 +17,30 @@
   }
 
   let isLoggedIn = false;
+  let queue: NotificationQueue;
 
   onMount(async () => {
+    isLoggedIn = false;
     try {
-      const response = await apiClient.get<ReadUserInfoResponse>(
+      const response = await apiClientExt.get<UserProfileType>(
         "/auth/read_user_info",
       );
-      console.log("User info:", response);
+      if (!response.success) {
+        throw new Error(response.message ?? "");
+      }
       isLoggedIn = true;
     } catch (error: any) {
-      if (error.response) {
-        if (error.response.status === 401) {
-          isLoggedIn = false;
-        }
-      }
+      queue.add({
+        kind: "error",
+        title: "Error",
+        subtitle: error.toString(),
+        timeout: 3000,
+      });
     }
   });
 </script>
+
+<NotificationQueue bind:this={queue} />
 
 <Grid>
   <Row>
@@ -35,7 +48,9 @@
   </Row>
   <Row>
     <Column>
-      {#if isLoggedIn}<UserProfile />{:else}<Login />{/if}
+      {#if isLoggedIn}<UserProfile
+          onLogout={() => (isLoggedIn = false)}
+        />{:else}<Login onLoginSuccess={() => (isLoggedIn = true)} />{/if}
     </Column>
   </Row>
 </Grid>

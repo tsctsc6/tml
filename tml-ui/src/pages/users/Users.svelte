@@ -1,9 +1,350 @@
 <script lang="ts">
-  import { Column, Grid, Row } from "carbon-components-svelte";
+  import {
+    Button,
+    DataTable,
+    DataTableSkeleton,
+    Modal,
+    Pagination,
+    TextInput,
+    Toggle,
+    Toolbar,
+    ToolbarContent,
+    PasswordInput,
+    NotificationQueue,
+  } from "carbon-components-svelte";
+  import TrashCan from "carbon-icons-svelte/lib/TrashCan.svelte";
+  import Add from "carbon-icons-svelte/lib/Add.svelte";
+  import CloudDownload from "carbon-icons-svelte/lib/CloudDownload.svelte";
+  import { apiClientExt } from "../../lib/api";
+
+  let queue: NotificationQueue;
+
+  /// Read all
+  interface ReadAllNormalUserResponse {
+    total: number;
+    items: UserItem[];
+  }
+
+  interface UserItem {
+    id: number;
+    username: string;
+    enabled: boolean;
+    created_at: string;
+  }
+
+  // Table header
+  const headers = [
+    { key: "id", value: "Id" },
+    { key: "username", value: "Username" },
+    { key: "enabled", value: "Enabled" },
+    { key: "created_at", value: "Created at" },
+    { key: "delete", value: "Delete", empty: true },
+  ] as const;
+
+  // Pagination value
+  let pageSize = 10;
+  let page = 1;
+
+  // Data from backend
+  let rows: UserItem[] = [];
+  let totalItems: number = 0;
+  let loading: boolean = true;
+
+  // Get data from backend
+  async function fetchData(currentPage: number, currentPageSize: number) {
+    loading = true;
+    try {
+      const response = await apiClientExt.get<ReadAllNormalUserResponse>(
+        `/mgmt/read_all_normal_user?page_index=${currentPage - 1}&page_size=${currentPageSize}`,
+      );
+      if (!response.success || !response.data) {
+        throw new Error(response.message ?? "");
+      }
+      rows = response.data.items;
+      totalItems = response.data.total;
+    } catch (error: any) {
+      queue.add({
+        kind: "error",
+        title: "Error",
+        subtitle: error.toString(),
+        timeout: 3000,
+      });
+    } finally {
+      loading = false;
+    }
+  }
+
+  $: fetchData(page, pageSize);
+
+  /// Update
+  interface UpdateNormalUserRequest {
+    id: number;
+    username: string;
+    enabled: boolean;
+  }
+
+  interface UpdateNormalUserResponse {}
+
+  let isEditingModalOpen = false;
+  let isEditingSubmitting = false;
+  // Copy a data, in case user not save
+  let editingItem: UpdateNormalUserRequest = {
+    id: 0,
+    username: "",
+    enabled: false,
+  };
+
+  // Row click event
+  function handleRowClick(event: CustomEvent<{ row: UserItem }>) {
+    const clickedRow = event.detail.row;
+    editingItem.id = clickedRow.id;
+    editingItem.username = clickedRow.username;
+    editingItem.enabled = clickedRow.enabled;
+    isEditingModalOpen = true;
+  }
+
+  // Submit changes to backend
+  async function handleSaveChanges() {
+    isEditingSubmitting = true;
+    try {
+      const updateNormalUserRequest: UpdateNormalUserRequest = {
+        id: editingItem.id,
+        username: editingItem.username,
+        enabled: editingItem.enabled,
+      };
+      const response = await apiClientExt.post<UpdateNormalUserResponse>(
+        "/mgmt/update_normal_user",
+        updateNormalUserRequest,
+      );
+      if (!response.success || !response.data) {
+        throw new Error(response.message ?? "");
+      }
+      isEditingModalOpen = false;
+
+      // Update row in datatable
+      rows = rows.map((item) => {
+        if (item.id === editingItem.id) {
+          item.username = editingItem.username;
+          item.enabled = editingItem.enabled;
+        }
+        return item;
+      });
+    } catch (error: any) {
+      queue.add({
+        kind: "error",
+        title: "Error",
+        subtitle: error.toString(),
+        timeout: 3000,
+      });
+    } finally {
+      isEditingSubmitting = false;
+    }
+  }
+
+  /// Delete
+  interface DeleteNormalUserRequest {
+    id: number;
+  }
+
+  interface DeleteNormalUserResponse {}
+
+  let isDeleteModalOpen = false;
+  let itemToDelete: UserItem | null = null;
+  let isDeleting = false;
+
+  function triggerDelete(event: Event, item: UserItem) {
+    event.stopPropagation();
+    itemToDelete = item;
+    isDeleteModalOpen = true;
+  }
+
+  async function confirmDelete() {
+    if (!itemToDelete) return;
+    isDeleting = true;
+
+    try {
+      const deleteNormalUserRequest: DeleteNormalUserRequest = {
+        id: itemToDelete.id,
+      };
+      const response = await apiClientExt.post<DeleteNormalUserResponse>(
+        "/mgmt/delete_normal_user",
+        deleteNormalUserRequest,
+      );
+      if (!response.success || !response.data) {
+        throw new Error(response.message ?? "");
+      }
+      rows = rows.filter((item) => item.id !== itemToDelete!.id);
+      isDeleteModalOpen = false;
+    } catch (error: any) {
+      queue.add({
+        kind: "error",
+        title: "Error",
+        subtitle: error.toString(),
+        timeout: 3000,
+      });
+    } finally {
+      isDeleting = false;
+      itemToDelete = null;
+    }
+  }
+
+  /// Create
+  interface CreateNormalUserRequest {
+    username: string;
+    password: string;
+  }
+
+  interface CreateNormalUserResponse {}
+
+  let isCreateModalOpen = false;
+  let itemToCreate: CreateNormalUserRequest = {
+    username: "",
+    password: "",
+  };
+  let isCreating = false;
+
+  function triggerCreate() {
+    itemToCreate = {
+      username: "",
+      password: "",
+    };
+    isCreateModalOpen = true;
+  }
+
+  async function confirmCreate() {
+    isCreating = true;
+    try {
+      const response = await apiClientExt.post<CreateNormalUserResponse>(
+        "/mgmt/create_normal_user",
+        itemToCreate,
+      );
+      if (!response.success || !response.data) {
+        throw new Error(response.message ?? "");
+      }
+      fetchData(page, pageSize);
+    } catch (error: any) {
+      queue.add({
+        kind: "error",
+        title: "Error",
+        subtitle: error.toString(),
+        timeout: 3000,
+      });
+    } finally {
+      isCreating = false;
+      isCreateModalOpen = false;
+    }
+  }
 </script>
 
-<Grid>
-  <Row>
-    <Column><h1>Users</h1></Column>
-  </Row>
-</Grid>
+<NotificationQueue bind:this={queue} />
+
+{#if loading}
+  <DataTableSkeleton {headers} rows={pageSize} />
+{:else}
+  <DataTable title="Users" {headers} {rows} on:click:row={handleRowClick}>
+    <Toolbar>
+      <ToolbarContent>
+        <Button
+          icon={CloudDownload}
+          iconDescription="Refresh"
+          on:click={() => fetchData(page, pageSize)}
+        />
+        <Button icon={Add} iconDescription="Add" on:click={triggerCreate} />
+      </ToolbarContent>
+    </Toolbar>
+    <svelte:fragment slot="cell" let:cell let:row>
+      {#if cell.key === "delete"}
+        <Button
+          kind="danger-tertiary"
+          size="small"
+          iconDescription="Delete"
+          icon={TrashCan}
+          on:click={(e) => triggerDelete(e, row as UserItem)}
+        />
+      {:else}
+        {cell.value}
+      {/if}
+    </svelte:fragment>
+  </DataTable>
+{/if}
+
+<Pagination {totalItems} pageSizes={[5, 10, 20, 50]} bind:pageSize bind:page />
+
+<Modal
+  bind:open={isEditingModalOpen}
+  modalHeading="Edit"
+  primaryButtonText={isEditingSubmitting ? "Saving" : "Save"}
+  secondaryButtonText="Cancel"
+  primaryButtonDisabled={isEditingSubmitting}
+  on:click:button--primary={handleSaveChanges}
+  on:click:button--secondary={() => (isEditingModalOpen = false)}
+  on:close={() => (isEditingModalOpen = false)}
+>
+  <div class="edit-form">
+    <TextInput
+      labelText="Id"
+      bind:value={editingItem.id}
+      placeholder="Id"
+      readonly
+    />
+  </div>
+  <div class="edit-form">
+    <TextInput
+      labelText="Username"
+      bind:value={editingItem.username}
+      placeholder="Username"
+    />
+  </div>
+  <div class="edit-form">
+    <Toggle labelText="Enabled" bind:toggled={editingItem.enabled} />
+  </div>
+</Modal>
+
+<Modal
+  danger
+  bind:open={isDeleteModalOpen}
+  modalHeading="Are you sure to delete?"
+  primaryButtonText={isDeleting ? "Deleting..." : "Delete"}
+  secondaryButtonText="Cancael"
+  primaryButtonDisabled={isDeleting}
+  on:click:button--primary={confirmDelete}
+  on:click:button--secondary={() => (isDeleteModalOpen = false)}
+  on:close={() => (isDeleteModalOpen = false)}
+>
+  <p>
+    Are you sure to delete user <strong>{itemToDelete?.id}</strong> ?
+  </p>
+  <p>All relevant information will be lost.</p>
+</Modal>
+
+<Modal
+  bind:open={isCreateModalOpen}
+  modalHeading="Edit"
+  primaryButtonText={isCreating ? "Creating" : "Create"}
+  secondaryButtonText="Cancel"
+  primaryButtonDisabled={isCreating}
+  on:click:button--primary={confirmCreate}
+  on:click:button--secondary={() => (isCreateModalOpen = false)}
+  on:close={() => (isCreateModalOpen = false)}
+>
+  <div class="edit-form">
+    <TextInput
+      labelText="Username"
+      bind:value={itemToCreate.username}
+      placeholder="Username"
+    />
+  </div>
+  <div class="edit-form">
+    <PasswordInput
+      labelText="Passowrd"
+      bind:value={itemToCreate.password}
+      placeholder="Passowrd"
+    />
+  </div>
+</Modal>
+
+<style>
+  .edit-form :global(.bx--form-item) {
+    margin-bottom: 1.25rem;
+  }
+</style>

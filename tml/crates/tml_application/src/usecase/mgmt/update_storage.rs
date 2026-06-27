@@ -1,3 +1,7 @@
+use std::path::Path;
+
+use path_slash::PathExt as _;
+
 pub mod repository {
     use tml_domain::model::mgmt::storage;
 
@@ -25,24 +29,28 @@ pub mod repository {
 }
 
 pub mod validation {
+    use std::path::Path;
+
     #[derive(Debug, thiserror::Error)]
     pub enum Error {
         #[error("Name too long error")]
         NameTooLong,
-        #[error("Invalid path error, \\ / : * ? \"  < > | is not allowed")]
-        InvalidPath,
+        #[error("The path is relative")]
+        PathIsRelative,
+        #[error("The directory does not exist or is a file.")]
+        DirectoryNotExist,
     }
 
     pub fn validate(request: &super::Request<'_>) -> Result<(), Error> {
         if request.name.chars().count() > 50 {
             return Err(Error::NameTooLong);
         }
-        if request
-            .path
-            .split("/")
-            .any(|x| x.contains(['\\', '/', ':', '*', '?', '\"', '<', '>', '|']))
-        {
-            return Err(Error::InvalidPath);
+        let path = Path::new(request.path);
+        if path.is_relative() {
+            return Err(Error::PathIsRelative);
+        }
+        if !path.is_dir() {
+            return Err(Error::DirectoryNotExist);
         }
         Ok(())
     }
@@ -67,8 +75,9 @@ pub async fn handle(
     repository: &impl repository::Trait,
 ) -> Result<(), Error> {
     validation::validate(&request)?;
+    let path = Path::new(request.path).to_slash_lossy();
     let _updated_storage = repository
-        .update_storage(request.id, request.name, request.path)
+        .update_storage(request.id, request.name, &path)
         .await?;
     Ok(())
 }
