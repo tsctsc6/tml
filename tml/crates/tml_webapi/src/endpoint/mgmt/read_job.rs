@@ -39,7 +39,10 @@ pub async fn handle(
 ) -> (StatusCode, Json<UnitizedResponseBody<Data>>) {
     tracing::info!("Received request: {:?}", query);
     if !claims.inner.roles.iter().any(|role| role == "admin") {
-        return (StatusCode::FORBIDDEN, Json(UnitizedResponseBody::failed(None)));
+        return (
+            StatusCode::FORBIDDEN,
+            Json(UnitizedResponseBody::failed(None)),
+        );
     }
 
     match read_job::handle(

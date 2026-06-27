@@ -60,7 +60,10 @@ pub async fn handle(
 ) -> (StatusCode, Json<UnitizedResponseBody<Data>>) {
     tracing::info!("Received request: {:?}", query);
     if !claims.inner.roles.iter().any(|role| role == "admin") {
-        return (StatusCode::FORBIDDEN, Json(UnitizedResponseBody::failed(None)));
+        return (
+            StatusCode::FORBIDDEN,
+            Json(UnitizedResponseBody::failed(None)),
+        );
     }
 
     let created_after = match query.created_after.as_deref() {
@@ -121,11 +124,15 @@ pub async fn handle(
                 ),
                 read_all_job::Error::PageSizeOutOfRange => (
                     StatusCode::OK,
-                    Json(UnitizedResponseBody::failed(Some("Page size out of range".into()))),
+                    Json(UnitizedResponseBody::failed(Some(
+                        "Page size out of range".into(),
+                    ))),
                 ),
                 read_all_job::Error::DateTimeOutOfRange => (
                     StatusCode::OK,
-                    Json(UnitizedResponseBody::failed(Some("Datetime out of range".into()))),
+                    Json(UnitizedResponseBody::failed(Some(
+                        "Datetime out of range".into(),
+                    ))),
                 ),
             }
         }

@@ -23,7 +23,10 @@ pub async fn handle(
 ) -> (StatusCode, Json<UnitizedResponseBody<Data>>) {
     tracing::info!("Received request: {:?}", request_body);
     if !claims.inner.roles.iter().any(|role| role == "admin") {
-        return (StatusCode::FORBIDDEN, Json(UnitizedResponseBody::failed(None)));
+        return (
+            StatusCode::FORBIDDEN,
+            Json(UnitizedResponseBody::failed(None)),
+        );
     }
 
     match create_normal_user::handle(
@@ -38,9 +41,7 @@ pub async fn handle(
     {
         Ok(response) => (
             StatusCode::OK,
-            Json(UnitizedResponseBody::success(Data {
-                id: response.id,
-            })),
+            Json(UnitizedResponseBody::success(Data { id: response.id })),
         ),
         Err(e) => {
             tracing::error!("Error occurred: {}", e);
@@ -83,7 +84,9 @@ pub async fn handle(
                     create_normal_user::repository::Error::UsernameDuplication => {
                         return (
                             StatusCode::OK,
-                            Json(UnitizedResponseBody::failed(Some("User already exists".into()))),
+                            Json(UnitizedResponseBody::failed(Some(
+                                "User already exists".into(),
+                            ))),
                         );
                     }
                     create_normal_user::repository::Error::Unknown(_) => {

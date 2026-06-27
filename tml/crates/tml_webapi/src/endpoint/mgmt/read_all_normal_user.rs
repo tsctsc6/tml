@@ -32,7 +32,10 @@ pub async fn handle(
 ) -> (StatusCode, Json<UnitizedResponseBody<Data>>) {
     tracing::info!("Received request: {:?}", query);
     if !claims.inner.roles.iter().any(|role| role == "admin") {
-        return (StatusCode::FORBIDDEN, Json(UnitizedResponseBody::failed(None)));
+        return (
+            StatusCode::FORBIDDEN,
+            Json(UnitizedResponseBody::failed(None)),
+        );
     }
     let page_index = query.page_index.unwrap_or(0);
     let page_size = query.page_size.unwrap_or(10);
@@ -70,7 +73,9 @@ pub async fn handle(
                 ),
                 read_all_normal_user::Error::PageSizeOutOfRange => (
                     StatusCode::OK,
-                    Json(UnitizedResponseBody::failed(Some("Page size out of range".into()))),
+                    Json(UnitizedResponseBody::failed(Some(
+                        "Page size out of range".into(),
+                    ))),
                 ),
             }
         }

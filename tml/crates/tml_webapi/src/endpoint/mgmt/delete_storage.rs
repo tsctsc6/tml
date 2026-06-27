@@ -20,7 +20,10 @@ pub async fn handle(
 ) -> (StatusCode, Json<UnitizedResponseBody<Data>>) {
     tracing::info!("Received request: {:?}", request_body);
     if !claims.inner.roles.iter().any(|role| role == "admin") {
-        return (StatusCode::FORBIDDEN, Json(UnitizedResponseBody::failed(None)));
+        return (
+            StatusCode::FORBIDDEN,
+            Json(UnitizedResponseBody::failed(None)),
+        );
     }
     match delete_storage::handle(
         delete_storage::Request {
@@ -30,10 +33,7 @@ pub async fn handle(
     )
     .await
     {
-        Ok(_) => (
-            StatusCode::OK,
-            Json(UnitizedResponseBody::success(Data {})),
-        ),
+        Ok(_) => (StatusCode::OK, Json(UnitizedResponseBody::success(Data {}))),
         Err(e) => {
             tracing::error!("Error occurred: {}", e);
             match e {

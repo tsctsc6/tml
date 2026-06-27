@@ -25,7 +25,10 @@ pub async fn handle(
 ) -> (StatusCode, Json<UnitizedResponseBody<Data>>) {
     tracing::info!("Received request: {:?}", request_body);
     if !claims.inner.roles.iter().any(|role| role == "admin") {
-        return (StatusCode::FORBIDDEN, Json(UnitizedResponseBody::failed(None)));
+        return (
+            StatusCode::FORBIDDEN,
+            Json(UnitizedResponseBody::failed(None)),
+        );
     }
 
     let job_type = match request_body.job_type.as_str() {
@@ -37,7 +40,9 @@ pub async fn handle(
         _ => {
             return (
                 StatusCode::OK,
-                Json(UnitizedResponseBody::failed(Some("Invalid job_type".into()))),
+                Json(UnitizedResponseBody::failed(Some(
+                    "Invalid job_type".into(),
+                ))),
             );
         }
     };
@@ -64,9 +69,7 @@ pub async fn handle(
     {
         Ok(response) => (
             StatusCode::OK,
-            Json(UnitizedResponseBody::success(Data {
-                id: response.id,
-            })),
+            Json(UnitizedResponseBody::success(Data { id: response.id })),
         ),
         Err(e) => {
             tracing::error!("Error occurred: {}", e);

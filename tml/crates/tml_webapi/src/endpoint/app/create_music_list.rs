@@ -22,7 +22,10 @@ pub async fn handle(
 ) -> (StatusCode, Json<UnitizedResponseBody<Data>>) {
     tracing::info!("Received request: {:?}", request_body);
     if !claims.inner.roles.iter().any(|role| role == "normal-user") {
-        return (StatusCode::FORBIDDEN, Json(UnitizedResponseBody::failed(None)));
+        return (
+            StatusCode::FORBIDDEN,
+            Json(UnitizedResponseBody::failed(None)),
+        );
     }
     match create_music_list::handle(
         create_music_list::Request {
@@ -35,9 +38,7 @@ pub async fn handle(
     {
         Ok(response) => (
             StatusCode::OK,
-            Json(UnitizedResponseBody::success(Data {
-                id: response.id,
-            })),
+            Json(UnitizedResponseBody::success(Data { id: response.id })),
         ),
         Err(e) => {
             tracing::error!("Error occurred: {}", e);
@@ -46,13 +47,17 @@ pub async fn handle(
                     create_music_list::validation::Error::NameEmpty => {
                         return (
                             StatusCode::OK,
-                            Json(UnitizedResponseBody::failed(Some("The name is empty".into()))),
+                            Json(UnitizedResponseBody::failed(Some(
+                                "The name is empty".into(),
+                            ))),
                         );
                     }
                     create_music_list::validation::Error::NameTooLong => {
                         return (
                             StatusCode::OK,
-                            Json(UnitizedResponseBody::failed(Some("The name is too long".into()))),
+                            Json(UnitizedResponseBody::failed(Some(
+                                "The name is too long".into(),
+                            ))),
                         );
                     }
                 },

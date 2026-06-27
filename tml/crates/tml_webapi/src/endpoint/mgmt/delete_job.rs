@@ -20,7 +20,10 @@ pub async fn handle(
 ) -> (StatusCode, Json<UnitizedResponseBody<Data>>) {
     tracing::info!("Received request: {:?}", request_body);
     if !claims.inner.roles.iter().any(|role| role == "admin") {
-        return (StatusCode::FORBIDDEN, Json(UnitizedResponseBody::failed(None)));
+        return (
+            StatusCode::FORBIDDEN,
+            Json(UnitizedResponseBody::failed(None)),
+        );
     }
     match delete_job::handle(
         delete_job::Request {
@@ -30,10 +33,7 @@ pub async fn handle(
     )
     .await
     {
-        Ok(_) => (
-            StatusCode::OK,
-            Json(UnitizedResponseBody::success(Data {})),
-        ),
+        Ok(_) => (StatusCode::OK, Json(UnitizedResponseBody::success(Data {}))),
         Err(e) => {
             tracing::error!("Error occurred: {}", e);
             match e {
@@ -41,7 +41,9 @@ pub async fn handle(
                     delete_job::repository::Error::JobNotFound => {
                         return (
                             StatusCode::OK,
-                            Json(UnitizedResponseBody::failed(Some("The job is not found".into()))),
+                            Json(UnitizedResponseBody::failed(Some(
+                                "The job is not found".into(),
+                            ))),
                         );
                     }
                     delete_job::repository::Error::Unknown(_) => {

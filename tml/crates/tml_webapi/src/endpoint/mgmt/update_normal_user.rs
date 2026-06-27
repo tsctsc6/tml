@@ -23,7 +23,10 @@ pub async fn handle(
 ) -> (StatusCode, Json<UnitizedResponseBody<Data>>) {
     tracing::info!("Received request: {:?}", request_body);
     if !claims.inner.roles.iter().any(|role| role == "admin") {
-        return (StatusCode::FORBIDDEN, Json(UnitizedResponseBody::failed(None)));
+        return (
+            StatusCode::FORBIDDEN,
+            Json(UnitizedResponseBody::failed(None)),
+        );
     }
 
     match update_normal_user::handle(
@@ -41,10 +44,7 @@ pub async fn handle(
     )
     .await
     {
-        Ok(_) => (
-            StatusCode::OK,
-            Json(UnitizedResponseBody::success(Data {})),
-        ),
+        Ok(_) => (StatusCode::OK, Json(UnitizedResponseBody::success(Data {}))),
         Err(e) => {
             tracing::error!("Error occurred: {}", e);
             match e {
@@ -76,7 +76,9 @@ pub async fn handle(
                     update_normal_user::validation::Error::NoFieldsToUpdate => {
                         return (
                             StatusCode::OK,
-                            Json(UnitizedResponseBody::failed(Some("No fields to update".into()))),
+                            Json(UnitizedResponseBody::failed(Some(
+                                "No fields to update".into(),
+                            ))),
                         );
                     }
                 },
@@ -106,7 +108,9 @@ pub async fn handle(
                     update_normal_user::repository::Error::UsernameDuplication => {
                         return (
                             StatusCode::OK,
-                            Json(UnitizedResponseBody::failed(Some("Username already exists".into()))),
+                            Json(UnitizedResponseBody::failed(Some(
+                                "Username already exists".into(),
+                            ))),
                         );
                     }
                     update_normal_user::repository::Error::Unknown(_) => {

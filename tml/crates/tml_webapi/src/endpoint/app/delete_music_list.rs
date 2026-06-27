@@ -20,7 +20,10 @@ pub async fn handle(
 ) -> (StatusCode, Json<UnitizedResponseBody<Data>>) {
     tracing::info!("Received request: {:?}", request_body);
     if !claims.inner.roles.iter().any(|role| role == "normal-user") {
-        return (StatusCode::FORBIDDEN, Json(UnitizedResponseBody::failed(None)));
+        return (
+            StatusCode::FORBIDDEN,
+            Json(UnitizedResponseBody::failed(None)),
+        );
     }
     match delete_music_list::handle(
         delete_music_list::Request {
@@ -32,10 +35,7 @@ pub async fn handle(
     )
     .await
     {
-        Ok(_) => (
-            StatusCode::OK,
-            Json(UnitizedResponseBody::success(Data {})),
-        ),
+        Ok(_) => (StatusCode::OK, Json(UnitizedResponseBody::success(Data {}))),
         Err(e) => {
             tracing::error!("Error occurred: {}", e);
             match e {
@@ -58,7 +58,9 @@ pub async fn handle(
                 delete_music_list::Error::PermissionDenied => {
                     return (
                         StatusCode::FORBIDDEN,
-                        Json(UnitizedResponseBody::failed(Some("Permission denied".into()))),
+                        Json(UnitizedResponseBody::failed(Some(
+                            "Permission denied".into(),
+                        ))),
                     );
                 }
                 delete_music_list::Error::TxError(_) => {

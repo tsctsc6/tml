@@ -30,7 +30,10 @@ pub async fn handle(
 ) -> (StatusCode, Json<UnitizedResponseBody<Data>>) {
     tracing::info!("Received request: {:?}", query);
     if !claims.inner.roles.iter().any(|role| role == "normal-user") {
-        return (StatusCode::FORBIDDEN, Json(UnitizedResponseBody::failed(None)));
+        return (
+            StatusCode::FORBIDDEN,
+            Json(UnitizedResponseBody::failed(None)),
+        );
     }
 
     match read_all_music_list::handle(
@@ -66,7 +69,9 @@ pub async fn handle(
                 ),
                 read_all_music_list::Error::PageSizeOutOfRange => (
                     StatusCode::OK,
-                    Json(UnitizedResponseBody::failed(Some("Page size out of range".into()))),
+                    Json(UnitizedResponseBody::failed(Some(
+                        "Page size out of range".into(),
+                    ))),
                 ),
             }
         }

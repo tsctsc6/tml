@@ -23,7 +23,10 @@ pub async fn handle(
 ) -> (StatusCode, Json<UnitizedResponseBody<Data>>) {
     tracing::info!("Received request: {:?}", request_body);
     if !claims.inner.roles.iter().any(|role| role == "admin") {
-        return (StatusCode::FORBIDDEN, Json(UnitizedResponseBody::failed(None)));
+        return (
+            StatusCode::FORBIDDEN,
+            Json(UnitizedResponseBody::failed(None)),
+        );
     }
     match create_storage::handle(
         create_storage::Request {
@@ -36,9 +39,7 @@ pub async fn handle(
     {
         Ok(response) => (
             StatusCode::OK,
-            Json(UnitizedResponseBody::success(Data {
-                id: response.id,
-            })),
+            Json(UnitizedResponseBody::success(Data { id: response.id })),
         ),
         Err(e) => {
             tracing::error!("Error occurred: {}", e);
@@ -47,7 +48,9 @@ pub async fn handle(
                     create_storage::validation::Error::NameTooLong => {
                         return (
                             StatusCode::OK,
-                            Json(UnitizedResponseBody::failed(Some("The name is too long".into()))),
+                            Json(UnitizedResponseBody::failed(Some(
+                                "The name is too long".into(),
+                            ))),
                         );
                     }
                     create_storage::validation::Error::DirectoryNotExist => {
@@ -61,7 +64,9 @@ pub async fn handle(
                     create_storage::validation::Error::PathIsRelative => {
                         return (
                             StatusCode::OK,
-                            Json(UnitizedResponseBody::failed(Some("The path is relative".into()))),
+                            Json(UnitizedResponseBody::failed(Some(
+                                "The path is relative".into(),
+                            ))),
                         );
                     }
                 },
