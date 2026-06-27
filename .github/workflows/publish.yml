@@ -9,6 +9,8 @@ jobs:
   release:
     runs-on: ubuntu-latest
     timeout-minutes: 1
+    outputs:
+      version: ${{ steps.get_version.outputs.VERSION }}
 
     steps:
       - name: Checkout code
@@ -63,9 +65,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v6
 
-      - name: Install yq
-        uses: dcarbone/install-yq-action@v1.3.1
-
       - name: Setup rust
         uses: dtolnay/rust-toolchain@stable
 
@@ -94,26 +93,20 @@ jobs:
           cargo build -r
           cd ..
 
-      - name: Get metadata
-        id: get_metadata
-        run: |
-          $version = yq .workspace.package.version tml/Cargo.toml
-          "version=$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
-
       - name: Compress archive (Windows)
         if: matrix.rid == 'win-x86_64' || matrix.rid == 'win-aarch64'
         run: |
-          Compress-Archive -Path "tml/target/release/tml_webapi.exe", "tml/config_example.toml" -DestinationPath "tml-${{ matrix.rid }}-v${{ steps.get_metadata.outputs.version }}.zip"
+          Compress-Archive -Path "tml/target/release/tml_webapi.exe", "tml/config_example.toml" -DestinationPath "tml-${{ matrix.rid }}-v${{ needs.release.outputs.version }}.zip"
 
       - name: Compress archive (GNU)
         if: matrix.rid != 'win-x86_64' && matrix.rid != 'win-aarch64'
         run: |
-          Compress-Archive -Path "tml/target/release/tml_webapi", "tml/config_example.toml" -DestinationPath "tml-${{ matrix.rid }}-v${{ steps.get_metadata.outputs.version }}.zip"
+          Compress-Archive -Path "tml/target/release/tml_webapi", "tml/config_example.toml" -DestinationPath "tml-${{ matrix.rid }}-v${{ needs.release.outputs.version }}.zip"
 
       - name: Upload release asset
         env:
           GITHUB_TOKEN: ${{ secrets.MY_GITHUB_TOKEN }}
         run: >
-          gh release upload v${{ steps.get_metadata.outputs.version }}
-          tml-${{ matrix.rid }}-v${{ steps.get_metadata.outputs.version }}.zip
+          gh release upload v${{ needs.release.outputs.version }}
+          tml-${{ matrix.rid }}-v${{ needs.release.outputs.version }}.zip
           --repo ${{ github.event.repository.full_name }}
