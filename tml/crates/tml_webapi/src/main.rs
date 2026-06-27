@@ -102,7 +102,7 @@ async fn start(app_state: AppState) -> ExitCode {
         }
     };
     let auth_routes = axum::Router::new()
-        .route("/register", post(endpoint::auth::register::handle))
+        // .route("/register", post(endpoint::auth::register::handle))
         .route("/login", post(endpoint::auth::login::handle))
         .route(
             "/read_user_info",
