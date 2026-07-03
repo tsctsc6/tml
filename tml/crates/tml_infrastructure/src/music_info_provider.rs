@@ -68,7 +68,7 @@ impl MusicInfoProvider {
         let entry = match entry {
             Ok(e) => e,
             Err(e) => {
-                tracing::error!("{}", e);
+                tracing::warn!("{}", e);
                 return None;
             }
         };
@@ -80,7 +80,7 @@ impl MusicInfoProvider {
                 if let Error::Skiped = e {
                     return None;
                 }
-                tracing::error!("{} {}", &entry.path().to_string_lossy(), e);
+                tracing::warn!("{} {}", &entry.path().to_string_lossy(), e);
                 return None;
             }
         };

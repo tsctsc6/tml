@@ -42,7 +42,7 @@ pub async fn handle(
             Json(UnitizedResponseBody::success(Data { id: response.id })),
         ),
         Err(e) => {
-            tracing::error!("Error occurred: {}", e);
+            tracing::warn!("Error occurred: {}", e);
             match e {
                 create_storage::Error::ValidationError(error) => match error {
                     create_storage::validation::Error::NameTooLong => {

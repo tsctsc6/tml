@@ -36,7 +36,7 @@ pub async fn handle(
             Json(UnitizedResponseBody::success(Data { id: response.id })),
         ),
         Err(e) => {
-            tracing::error!("Error occurred: {}", e);
+            tracing::warn!("Error occurred: {}", e);
             if let register::Error::RepositoryError(error) = e {
                 if let register::repository::Error::UsernameDuplication = error {
                     return (

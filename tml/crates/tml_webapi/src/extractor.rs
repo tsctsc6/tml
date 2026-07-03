@@ -40,7 +40,7 @@ where
         let token_data = match app_state.jwt_manager.verify_token(token) {
             Ok(t) => t,
             Err(e) => {
-                tracing::error!("{:?}", e);
+                tracing::warn!("{:?}", e);
                 return Err(StatusCode::UNAUTHORIZED);
             }
         };
@@ -59,7 +59,7 @@ where
         {
             Ok(s) => s,
             Err(e) => {
-                tracing::error!("{:?}", e);
+                tracing::warn!("{:?}", e);
                 return Err(StatusCode::UNAUTHORIZED);
             }
         };

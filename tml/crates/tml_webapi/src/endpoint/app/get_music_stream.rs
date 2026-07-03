@@ -38,7 +38,7 @@ pub async fn handle(
     let music_info_id = match hex::decode(&query.id) {
         Ok(id) => id,
         Err(e) => {
-            tracing::error!("{}", e);
+            tracing::warn!("{}", e);
             return StatusCode::BAD_REQUEST.into_response();
         }
     };
@@ -51,7 +51,7 @@ pub async fn handle(
     {
         Ok(response) => response.file_path,
         Err(e) => {
-            tracing::error!("{}", e);
+            tracing::warn!("{}", e);
             return match e {
                 get_music_info_file_path::Error::RepositoryError(err) => match err {
                     get_music_info_file_path::repository::Error::MusicInfoNotFound => {
@@ -72,14 +72,14 @@ pub async fn handle(
     let file = match File::open(file_path).await {
         Ok(f) => f,
         Err(e) => {
-            tracing::error!("{}", e);
+            tracing::warn!("{}", e);
             return StatusCode::NOT_FOUND.into_response();
         }
     };
     let body = match KnownSize::file(file).await {
         Ok(b) => b,
         Err(e) => {
-            tracing::error!("{}", e);
+            tracing::warn!("{}", e);
             return StatusCode::INTERNAL_SERVER_ERROR.into_response();
         }
     };
