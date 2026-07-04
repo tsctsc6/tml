@@ -73,7 +73,7 @@ pub async fn handle(
     {
         Ok(_) => (StatusCode::OK, Json(UnitizedResponseBody::success(Data {}))),
         Err(e) => {
-            tracing::error!("Error occurred: {}", e);
+            tracing::warn!("Error occurred: {}", e);
             match e {
                 change_music_info_order_in_music_list::Error::RepositoryError(error) => {
                     match error {

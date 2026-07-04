@@ -101,7 +101,7 @@ pub async fn handle(
             )
         }
         Err(e) => {
-            tracing::error!("Error occurred: {}", e);
+            tracing::warn!("Error occurred: {}", e);
             match e {
                 read_all_music_info_from_music_list::Error::RepositoryError(error) => match error {
                     read_all_music_info_from_music_list::repository::Error::MusicListNotFound => {

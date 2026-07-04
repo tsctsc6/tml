@@ -44,7 +44,7 @@ pub async fn handle(
             })),
         ),
         Err(e) => {
-            tracing::error!("Error occurred: {}", e);
+            tracing::warn!("Error occurred: {}", e);
             match e {
                 login::Error::RepositoryError(error) => {
                     if let login::repository::Error::UserNotFound = error {

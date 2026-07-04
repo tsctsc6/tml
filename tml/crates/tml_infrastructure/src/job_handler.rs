@@ -89,14 +89,14 @@ impl tml_application::app_trait::job_handler::Trait for JobHandler {
                 match self.repository.finish_job(job_id, true, "").await {
                     Ok(_) => {}
                     Err(e) => {
-                        tracing::error!("{}", e);
+                        tracing::warn!("{}", e);
                         return;
                     }
                 };
                 tracing::info!("job {} done", job_id);
             }
             Err(e) => {
-                tracing::error!("{}", e);
+                tracing::warn!("{}", e);
                 match self
                     .repository
                     .finish_job(job_id, false, &e.to_string())
@@ -104,7 +104,7 @@ impl tml_application::app_trait::job_handler::Trait for JobHandler {
                 {
                     Ok(_) => {}
                     Err(_) => {
-                        tracing::error!("{}", e);
+                        tracing::warn!("{}", e);
                         return;
                     }
                 };
@@ -285,7 +285,7 @@ impl Repository {
                         }
                     }
                     Err(e) => {
-                        tracing::error!("Failed to fetch music_info chunk: {}", e);
+                        tracing::warn!("Failed to fetch music_info chunk: {}", e);
                         break;
                     }
                 }

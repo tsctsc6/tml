@@ -39,7 +39,7 @@ pub async fn handle(
     {
         Ok(_) => (StatusCode::OK, Json(UnitizedResponseBody::success(Data {}))),
         Err(e) => {
-            tracing::error!("Error occurred: {}", e);
+            tracing::warn!("Error occurred: {}", e);
             match e {
                 update_music_list::Error::ValidationError(error) => match error {
                     update_music_list::validation::Error::NameEmpty => {

@@ -67,7 +67,7 @@ pub async fn handle(
             })),
         ),
         Err(e) => {
-            tracing::error!("Error occurred: {}", e);
+            tracing::warn!("Error occurred: {}", e);
             match e {
                 read_job::Error::RepositoryError(e) => match e {
                     read_job::repository::Error::JobNotFound => (

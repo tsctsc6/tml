@@ -44,7 +44,7 @@ pub async fn handle(
             Json(UnitizedResponseBody::success(Data { id: response.id })),
         ),
         Err(e) => {
-            tracing::error!("Error occurred: {}", e);
+            tracing::warn!("Error occurred: {}", e);
             match e {
                 create_normal_user::Error::ValidationError(error) => match error {
                     create_normal_user::validation::Error::UsernameTooLong => {

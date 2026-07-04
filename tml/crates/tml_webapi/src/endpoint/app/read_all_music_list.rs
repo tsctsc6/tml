@@ -61,7 +61,7 @@ pub async fn handle(
             })),
         ),
         Err(e) => {
-            tracing::error!("Error occurred: {}", e);
+            tracing::warn!("Error occurred: {}", e);
             match e {
                 read_all_music_list::Error::RepositoryError(_) => (
                     StatusCode::INTERNAL_SERVER_ERROR,

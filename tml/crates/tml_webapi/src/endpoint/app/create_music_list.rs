@@ -41,7 +41,7 @@ pub async fn handle(
             Json(UnitizedResponseBody::success(Data { id: response.id })),
         ),
         Err(e) => {
-            tracing::error!("Error occurred: {}", e);
+            tracing::warn!("Error occurred: {}", e);
             match e {
                 create_music_list::Error::ValidationError(error) => match error {
                     create_music_list::validation::Error::NameEmpty => {

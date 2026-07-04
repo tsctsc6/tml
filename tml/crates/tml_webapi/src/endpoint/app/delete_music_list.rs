@@ -37,7 +37,7 @@ pub async fn handle(
     {
         Ok(_) => (StatusCode::OK, Json(UnitizedResponseBody::success(Data {}))),
         Err(e) => {
-            tracing::error!("Error occurred: {}", e);
+            tracing::warn!("Error occurred: {}", e);
             match e {
                 delete_music_list::Error::RepositoryError(error) => match error {
                     delete_music_list::repository::Error::MusicListNotFound => {

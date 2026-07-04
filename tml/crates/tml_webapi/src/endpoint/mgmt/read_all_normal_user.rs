@@ -65,7 +65,7 @@ pub async fn handle(
             })),
         ),
         Err(e) => {
-            tracing::error!("Error occurred: {}", e);
+            tracing::warn!("Error occurred: {}", e);
             match e {
                 read_all_normal_user::Error::RepositoryError(_) => (
                     StatusCode::INTERNAL_SERVER_ERROR,

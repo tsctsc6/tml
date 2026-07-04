@@ -107,7 +107,7 @@ pub async fn handle(
             })),
         ),
         Err(e) => {
-            tracing::error!("Error occurred: {}", e);
+            tracing::warn!("Error occurred: {}", e);
             (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json(UnitizedResponseBody::failed(None)),

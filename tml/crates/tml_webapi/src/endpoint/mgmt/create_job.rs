@@ -72,7 +72,7 @@ pub async fn handle(
             Json(UnitizedResponseBody::success(Data { id: response.id })),
         ),
         Err(e) => {
-            tracing::error!("Error occurred: {}", e);
+            tracing::warn!("Error occurred: {}", e);
             match e {
                 create_job::Error::ValidationError(error) => match error {
                     create_job::validation::Error::DescriptionTooLong => {

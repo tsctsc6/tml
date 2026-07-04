@@ -36,7 +36,7 @@ pub async fn handle(
     {
         Ok(_) => (StatusCode::OK, Json(UnitizedResponseBody::success(Data {}))),
         Err(e) => {
-            tracing::error!("Error occurred: {}", e);
+            tracing::warn!("Error occurred: {}", e);
             match e {
                 delete_normal_user::Error::RepositoryError(error) => match error {
                     delete_normal_user::repository::Error::UserNotFound => {
