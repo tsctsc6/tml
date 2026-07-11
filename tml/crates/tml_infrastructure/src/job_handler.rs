@@ -163,7 +163,15 @@ impl JobHandler {
                 })
                 .map(|x| x.id.clone())
                 .collect();
-            self.repository.delete_music_info(file_not_exist).await?;
+            self.repository
+                .delete_music_info(file_not_exist.clone())
+                .await?;
+            let file_not_exist: Vec<_> = file_not_exist.iter().map(|x| hex::encode(x)).collect();
+            let _task = self
+                .meilisearch_client
+                .index(meilisearch_index_name.to_string())
+                .delete_documents(&file_not_exist)
+                .await?;
         }
         self.repository
             .reindex_concurrently("app.music_info_pkey")
