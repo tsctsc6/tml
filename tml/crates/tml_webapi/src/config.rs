@@ -5,6 +5,7 @@ use serde::Deserialize;
 pub struct AppConfig {
     pub listening_address: String,
     pub log_level: String,
+    pub scan_extensions: Vec<String>,
     pub database: Database,
     pub jwt: Jwt,
     pub user_id_security_stamp_cache: UserIdSecurityStampCache,

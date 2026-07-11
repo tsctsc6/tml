@@ -64,6 +64,7 @@ impl MusicInfoProvider {
         &self,
         base_path: &str,
         entry: Result<walkdir::DirEntry, walkdir::Error>,
+        file_extensions: impl IntoIterator<Item = impl AsRef<str>>,
     ) -> Option<MusicInfo> {
         let entry = match entry {
             Ok(e) => e,
@@ -72,7 +73,7 @@ impl MusicInfoProvider {
                 return None;
             }
         };
-        match self.map_to_music_info_result(base_path, &entry) {
+        match self.map_to_music_info_result(base_path, &entry, file_extensions) {
             Ok(m) => {
                 return Some(m);
             }
@@ -90,6 +91,7 @@ impl MusicInfoProvider {
         &self,
         base_path: &str,
         entry: &walkdir::DirEntry,
+        file_extensions: impl IntoIterator<Item = impl AsRef<str>>,
     ) -> Result<MusicInfo, Error> {
         let path = entry.path();
         tracing::debug!("Checking: {}", path.to_slash_lossy());
@@ -98,7 +100,14 @@ impl MusicInfoProvider {
             Err(Error::Skiped)?;
         }
         let extension = path.extension().and_then(OsStr::to_str);
-        if extension != Some("flac") && extension != Some("mp3") {
+        let extension = match extension {
+            Some(e) => e,
+            None => {
+                tracing::debug!("Skiped: {}", path.to_slash_lossy());
+                return Err(Error::Skiped);
+            }
+        };
+        if file_extensions.into_iter().any(|x| x.as_ref() == extension) {
             tracing::debug!("Skiped: {}", path.to_slash_lossy());
             Err(Error::Skiped)?;
         }
@@ -172,9 +181,17 @@ impl MusicInfoProvider {
 }
 
 impl tml_application::app_trait::music_info_provider::Trait for MusicInfoProvider {
-    fn scan(&self, path: &str) -> impl Iterator<Item = MusicInfo> + Send {
+    fn scan(
+        &self,
+        path: &str,
+        file_extensions: impl IntoIterator<Item = impl AsRef<str>>,
+    ) -> impl Iterator<Item = MusicInfo> + Send {
+        let file_extensions: Vec<_> = file_extensions
+            .into_iter()
+            .map(|item| item.as_ref().to_string())
+            .collect();
         return WalkDir::new(path)
             .into_iter()
-            .filter_map(|x| self.map_to_music_info(path, x));
+            .filter_map(move |x| self.map_to_music_info(path, x, &file_extensions));
     }
 }

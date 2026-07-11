@@ -64,6 +64,7 @@ pub async fn handle(
             state.meilisearch_client,
         ),
         &state.app_config.meilisearch.index_name,
+        &state.app_config.scan_extensions,
     )
     .await
     {

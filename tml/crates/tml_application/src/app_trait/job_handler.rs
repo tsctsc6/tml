@@ -8,5 +8,6 @@ pub trait Trait: Send + Sync + Clone + 'static {
         job_type: job::JobType,
         job_args: serde_json::Value,
         meilisearch_index_name: &str,
+        file_extensions: impl IntoIterator<Item = String> + Send,
     );
 }

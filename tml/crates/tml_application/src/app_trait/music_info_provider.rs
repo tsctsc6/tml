@@ -24,5 +24,9 @@ pub struct MusicInfoMeiliSearch {
 }
 
 pub trait Trait: Send + Sync + Clone + 'static {
-    fn scan(&self, path: &str) -> impl Iterator<Item = MusicInfo> + Send;
+    fn scan(
+        &self,
+        path: &str,
+        file_extensions: impl IntoIterator<Item = impl AsRef<str>>,
+    ) -> impl Iterator<Item = MusicInfo> + Send;
 }

@@ -44,6 +44,7 @@ impl JobHandler {
         job_type: tml_domain::model::mgmt::job::JobType,
         job_args: &serde_json::Value,
         meilisearch_index_name: &str,
+        file_extensions: impl IntoIterator<Item = impl AsRef<str>>,
     ) -> Result<(), Error> {
         match job_type {
             tml_domain::model::mgmt::job::JobType::Undefined => (),
@@ -51,8 +52,12 @@ impl JobHandler {
                 let storage_id = job_args["storage_id"]
                     .as_i64()
                     .ok_or(Error::StorageIdNotFoundError)?;
-                self.handle_scan_incremental_job(storage_id, meilisearch_index_name)
-                    .await?;
+                self.handle_scan_incremental_job(
+                    storage_id,
+                    meilisearch_index_name,
+                    file_extensions,
+                )
+                .await?;
             }
             tml_domain::model::mgmt::job::JobType::BuildIndex => {
                 self.handle_build_index_job(meilisearch_index_name).await?;
@@ -80,9 +85,10 @@ impl tml_application::app_trait::job_handler::Trait for JobHandler {
         job_type: tml_domain::model::mgmt::job::JobType,
         job_args: serde_json::Value,
         meilisearch_index_name: &str,
+        file_extensions: impl IntoIterator<Item = String> + Send,
     ) {
         match self
-            .handle_inner(job_type, &job_args, meilisearch_index_name)
+            .handle_inner(job_type, &job_args, meilisearch_index_name, file_extensions)
             .await
         {
             Ok(_) => {
@@ -119,10 +125,13 @@ impl JobHandler {
         &self,
         storage_id: i64,
         meilisearch_index_name: &str,
+        file_extensions: impl IntoIterator<Item = impl AsRef<str>>,
     ) -> Result<(), Error> {
         self.handle_build_index_job(meilisearch_index_name).await?;
         let path = self.repository.get_storage_path(storage_id).await?;
-        let mut music_info_chunk_stream = self.get_music_info_chunk_stream(path).await;
+        let mut music_info_chunk_stream = self
+            .get_music_info_chunk_stream(path, file_extensions)
+            .await;
         while let Some(chunk) = music_info_chunk_stream.next().await {
             self.repository
                 .create_or_update_music_info(storage_id, chunk.clone().into_iter())
@@ -152,14 +161,19 @@ impl JobHandler {
     pub async fn get_music_info_chunk_stream(
         &self,
         path: String,
+        file_extensions: impl IntoIterator<Item = impl AsRef<str>>,
     ) -> impl tokio_stream::Stream<Item = Vec<tml_application::app_trait::music_info_provider::MusicInfo>>
     {
         let (tx, rx) = mpsc::unbounded_channel();
 
         let music_info_provider = self.music_info_provider.clone();
+        let file_extensions: Vec<_> = file_extensions
+            .into_iter()
+            .map(|item| item.as_ref().to_string())
+            .collect();
 
         tokio::task::spawn_blocking(move || {
-            let iter = music_info_provider.scan(&path);
+            let iter = music_info_provider.scan(&path, file_extensions);
 
             for item in iter {
                 if tx.send(item).is_err() {
