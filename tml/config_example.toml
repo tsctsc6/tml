@@ -1,6 +1,6 @@
 listening_address = "127.0.0.1:9000"
 log_level = "warn"
-scan_extensions = ["mp3", "flac", "aac"]
+scan_extensions = ["mp3", "flac", "m4a"]
 
 [database]
 connection_string = "postgres://username:password@host/database"
