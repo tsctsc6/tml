@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use crate::entity::{app::music_info, mgmt::job};
 use futures::stream::StreamExt as _;
 use meilisearch_sdk::client::Client;
@@ -130,7 +132,7 @@ impl JobHandler {
         self.handle_build_index_job(meilisearch_index_name).await?;
         let path = self.repository.get_storage_path(storage_id).await?;
         let mut music_info_chunk_stream = self
-            .get_music_info_chunk_stream(path, file_extensions)
+            .get_music_info_chunk_stream(path.clone(), file_extensions)
             .await;
         while let Some(chunk) = music_info_chunk_stream.next().await {
             self.repository
@@ -150,6 +152,18 @@ impl JobHandler {
                 .index(meilisearch_index_name.to_string())
                 .add_documents(&meilisearch_models, Some("id"))
                 .await?;
+        }
+        let mut chunk_stream = self.repository.get_music_info_chunk_stream().await;
+        while let Some(chunk) = chunk_stream.next().await {
+            let file_not_exist: Vec<_> = chunk
+                .iter()
+                .filter(|x| {
+                    let file_path = PathBuf::from(path.clone()).join(x.file_path.clone());
+                    !file_path.exists()
+                })
+                .map(|x| x.id.clone())
+                .collect();
+            self.repository.delete_music_info(file_not_exist).await?;
         }
         self.repository
             .reindex_concurrently("app.music_info_pkey")
@@ -307,6 +321,18 @@ impl Repository {
         });
 
         UnboundedReceiverStream::new(rx)
+    }
+
+    async fn delete_music_info(
+        &self,
+        file_not_exist: impl IntoIterator<Item = Vec<u8>>,
+    ) -> Result<(), RepositoryError> {
+        let res = music_info::Entity::delete_many()
+            .filter_by_ids(file_not_exist)
+            .exec(&self.db)
+            .await?;
+        tracing::info!("{} music_info deleted", res.rows_affected);
+        Ok(())
     }
 }
 
