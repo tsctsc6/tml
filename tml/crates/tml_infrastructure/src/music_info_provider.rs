@@ -107,7 +107,7 @@ impl MusicInfoProvider {
                 return Err(Error::Skiped);
             }
         };
-        if file_extensions.into_iter().any(|x| x.as_ref() == extension) {
+        if !file_extensions.into_iter().any(|x| x.as_ref() == extension) {
             tracing::debug!("Skiped: {}", path.to_slash_lossy());
             Err(Error::Skiped)?;
         }
