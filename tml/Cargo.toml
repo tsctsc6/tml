@@ -13,26 +13,26 @@ tml_domain = { path = "crates/tml_domain" }
 tml_application = { path = "crates/tml_application" }
 tml_infrastructure = { path = "crates/tml_infrastructure" }
 
-async-trait = "0.1.89"
+async-trait = "0.1.92"
 axum = { version = "0.8.9", features = ["macros"] }
 jsonwebtoken = { version = "10.4.0", default-features = false, features = [
     "rust_crypto",
 ] }
-sea-orm = { version = "2.0.0-rc.42", features = [
+sea-orm = { version = "2.0.4", features = [
     "sqlx-postgres",
     "macros",
     "runtime-tokio-rustls",
 ] }
-serde = { version = "1.0.228", features = ["derive"] }
-serde_json = "1.0.150"
-tokio = { version = "1.52.3", features = ["macros", "rt-multi-thread"] }
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.154"
+tokio = { version = "1.54.1", features = ["macros", "rt-multi-thread"] }
 argon2 = { version = "0.5.3", features = ["password-hash"] }
-thiserror = "2.0.18"
-config = "0.15.25"
+thiserror = "2.0.21"
+config = "0.15.27"
 chrono = "0.4.45"
-clap = { version = "4.6.1", features = ["derive"] }
-inquire = "0.9.4"
-time = { version = "0.3.53", features = ["formatting", "macros"] }
+clap = { version = "4.6.10", features = ["derive"] }
+inquire = "0.9.5"
+time = { version = "0.3.55", features = ["formatting", "macros"] }
 tracing = "0.1.44"
 tracing-appender = "0.2.5"
 tracing-subscriber = { version = "0.3.23", features = [
@@ -40,11 +40,11 @@ tracing-subscriber = { version = "0.3.23", features = [
     "fmt",
     "time",
 ] }
-uuid = { version = "1.23.4", features = ["v4"] }
-moka = { version = "0.12.15", features = ["future"] }
+uuid = { version = "1.29.3", features = ["v4"] }
+moka = { version = "0.12.16", features = ["future"] }
 lofty = "0.24.0"
-walkdir = "2.5.0"
-xxhash-rust = { version = "0.8.16", features = ["xxh3"] }
+walkdir = "2.5.1"
+xxhash-rust = { version = "0.8.21", features = ["xxh3"] }
 fractional_index = "2.0.2"
 hex = "0.4.3"
 axum-extra = { version = "0.12.6", features = ["typed-header"] }
@@ -54,9 +54,9 @@ meilisearch-sdk = { version = "0.33.0", default-features = false, features = [
     "reqwest",
     "jwt_rust_crypto",
 ] }
-reqwest = "0.13.4"
-tokio-stream = { version = "0.1.18", features = ["sync"] }
-futures = "0.3.32"
+reqwest = "0.13.5"
+tokio-stream = { version = "0.1.19", features = ["sync"] }
+futures = "0.3.34"
 path-slash = "0.2.1"
-rust-embed = { version = "8.12.0", features = ["axum"] }
+rust-embed = { version = "8.14.0", features = ["axum"] }
 mime_guess = "2.0.5"

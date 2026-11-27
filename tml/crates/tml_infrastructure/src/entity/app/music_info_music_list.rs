@@ -9,9 +9,9 @@ pub struct Model {
     #[sea_orm(primary_key, auto_increment = false)]
     pub music_list_id: i64,
     #[sea_orm(belongs_to, from = "music_info_id", to = "id")]
-    pub music_info: Option<super::music_info::Entity>,
+    pub music_info: BelongsTo<super::music_info::Entity>,
     #[sea_orm(belongs_to, from = "music_list_id", to = "id")]
-    pub music_list: Option<super::music_list::Entity>,
+    pub music_list: BelongsTo<super::music_list::Entity>,
     pub order: Vec<u8>,
 }
 

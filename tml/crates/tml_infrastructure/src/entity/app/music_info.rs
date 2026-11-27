@@ -18,7 +18,7 @@ pub struct Model {
     pub storage_id: i64,
     pub file_path: String,
     #[sea_orm(belongs_to, from = "storage_id", to = "id")]
-    pub storage: Option<super::super::mgmt::storage::Entity>,
+    pub storage: BelongsTo<super::super::mgmt::storage::Entity>,
     #[sea_orm(has_many, via = "music_info_music_list")]
     pub music_lists: HasMany<super::music_list::Entity>,
 }
