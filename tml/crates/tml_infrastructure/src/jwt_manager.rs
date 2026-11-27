@@ -12,18 +12,27 @@ pub struct JwtManager {
 }
 
 pub struct Config {
-    secret: String,
+    encoding_key: EncodingKey,
+    decoding_key: DecodingKey,
     exp_in_seconds: u64,
 }
 
 impl JwtManager {
-    pub fn new(secret: impl Into<String>, exp_in_seconds: u64) -> JwtManager {
-        JwtManager {
+    pub fn try_new(secret: impl Into<String>, exp_in_seconds: u64) -> Result<Self, tml_application::app_trait::jwt_manager::Error> {
+        let secret = secret.into();
+        let secret_bytes = secret.as_ref();
+        let encoding_key = EncodingKey::from_secret(secret_bytes)
+            .map_err(|e| tml_application::app_trait::jwt_manager::Error::JwtError(e.to_string()))?;
+        let decoding_key = DecodingKey::from_secret(secret_bytes)
+            .map_err(|e| tml_application::app_trait::jwt_manager::Error::JwtError(e.to_string()))?;
+
+        Ok(Self {
             config: Arc::new(Config {
-                secret: secret.into(),
+                encoding_key,
+                decoding_key,
                 exp_in_seconds,
             }),
-        }
+        })
     }
 }
 
@@ -44,7 +53,7 @@ impl tml_application::app_trait::jwt_manager::Trait for JwtManager {
         let token_str = encode(
             &Header::default(),
             &claims,
-            &EncodingKey::from_secret(self.config.secret.as_ref()),
+            &self.config.encoding_key,
         )
         .map_err(|e| tml_application::app_trait::jwt_manager::Error::JwtError(e.to_string()))?;
         Ok(token_str)
@@ -56,7 +65,7 @@ impl tml_application::app_trait::jwt_manager::Trait for JwtManager {
     ) -> Result<Claims, tml_application::app_trait::jwt_manager::Error> {
         let token_data = decode::<Claims>(
             token,
-            &DecodingKey::from_secret(self.config.secret.as_ref()),
+            &self.config.decoding_key,
             &Validation::default(),
         )
         .map_err(|e| tml_application::app_trait::jwt_manager::Error::JwtError(e.to_string()))?;

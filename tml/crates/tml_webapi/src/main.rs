@@ -70,14 +70,22 @@ async fn main() -> ExitCode {
         }
     };
 
+    let jwt_manager = match tml_infrastructure::jwt_manager::JwtManager::try_new(
+        &app_config.jwt.secret,
+        app_config.jwt.exp_in_seconds,
+    ) {
+        Ok(j) => j,
+        Err(e) => {
+            tracing::error!("{}", e.to_string());
+            return ExitCode::FAILURE;
+        }
+    };
+
     let app_state = AppState {
         app_config: Arc::clone(&app_config),
         cli: Arc::clone(&cli),
         password_hasher: tml_infrastructure::password_hasher::PasswordHasher,
-        jwt_manager: tml_infrastructure::jwt_manager::JwtManager::new(
-            &app_config.jwt.secret,
-            app_config.jwt.exp_in_seconds,
-        ),
+        jwt_manager,
         db,
         user_id_security_stamp_cache,
         music_info_provider: tml_infrastructure::music_info_provider::MusicInfoProvider,

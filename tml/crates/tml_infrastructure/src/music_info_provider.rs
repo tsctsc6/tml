@@ -29,8 +29,8 @@ pub struct MusicInfoProvider;
 pub enum Error {
     #[error("Skiped")]
     Skiped,
-    #[error("Lofty error: {0}")]
-    LoftyError(#[from] lofty::error::LoftyError),
+    #[error("Lofty file parse error: {0}")]
+    LoftyFileParseError(#[from] lofty::error::FileParseError),
     #[error("Std IO error: {0}")]
     StdIOError(#[from] std::io::Error),
     #[error("Tag error: {0}")]

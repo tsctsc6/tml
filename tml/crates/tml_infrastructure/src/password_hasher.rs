@@ -1,6 +1,5 @@
 use argon2::{
     Argon2, PasswordHash, PasswordHasher as _, PasswordVerifier,
-    password_hash::{SaltString, rand_core::OsRng},
 };
 
 #[derive(Clone)]
@@ -11,13 +10,11 @@ impl tml_application::app_trait::password_hasher::Trait for PasswordHasher {
         &self,
         password: &str,
     ) -> Result<String, tml_application::app_trait::password_hasher::Error> {
-        let salt = SaltString::generate(&mut OsRng);
-
         // Configurate Argon2id and use default arguments(m, t, p).
         let argon2 = Argon2::default();
 
         let password_hash = argon2
-            .hash_password(password.as_bytes(), &salt)
+            .hash_password(password.as_bytes())
             .map_err(|e| {
                 tml_application::app_trait::password_hasher::Error::HashingError(e.to_string())
             })?;
@@ -40,7 +37,7 @@ impl tml_application::app_trait::password_hasher::Trait for PasswordHasher {
         // Argon2::default() will be covered by parsed_hash.
         match Argon2::default().verify_password(password_input.as_bytes(), &parsed_hash) {
             Ok(_) => Ok(()),
-            Err(argon2::password_hash::Error::Password) => {
+            Err(argon2::password_hash::Error::PasswordInvalid) => {
                 Err(tml_application::app_trait::password_hasher::Error::InvalidPassword)
             }
             Err(e) => {
